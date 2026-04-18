@@ -1,36 +1,49 @@
-import { useTheme } from "../theme/ThemeProvider";
-
-export const AccountCard = ({ account }) => {
-  const theme = useTheme() || {};
-  const colors = theme.colors || {};
-
-  const color =
-    account.color === "primary"
-      ? colors.primary
-      : colors[account.color] || colors.primary;
-
+export const AccountCard = ({ account, isActive }) => {
   return (
     <div
       style={{
-        height: 180,
+        height: 160,
         borderRadius: 20,
-        padding: 16,
+        padding: 18,
+
+        background:
+          "linear-gradient(135deg, #3b82f6 0%, #1e293b 100%)",
+
         color: "white",
-        background: `linear-gradient(135deg, ${color}, #1a1a1a)`,
-        boxShadow: "0 10px 30px rgba(0,0,0,0.2)",
-        border: "1px solid rgba(255,255,255,0.1)",
+
+        // ❌ убрали тени полностью
+        boxShadow: "none",
+
+        // 👇 чуть живости
+        transform: isActive ? "scale(1)" : "scale(0.96)",
+        transition: "all 0.25s ease",
+
+        display: "flex",
+        flexDirection: "column",
+        justifyContent: "space-between",
       }}
     >
-      <div style={{ display: "flex", justifyContent: "space-between" }}>
-        <span style={{ fontSize: 22 }}>{account.emoji}</span>
-        <span style={{ opacity: 0.7 }}>{account.type}</span>
-      </div>
+      <div>
+        <div style={{ opacity: 0.85 }}>{account.name}</div>
 
-      <div style={{ marginTop: 40 }}>
-        <div style={{ fontSize: 16 }}>{account.name}</div>
-        <div style={{ fontSize: 24, fontWeight: 700 }}>
+        <div
+          style={{
+            fontSize: 28,
+            fontWeight: 700,
+            marginTop: 10,
+          }}
+        >
           {account.balance} ₸
         </div>
+      </div>
+
+      <div
+        style={{
+          fontSize: 12,
+          opacity: 0.7,
+        }}
+      >
+        **** 1234
       </div>
     </div>
   );
