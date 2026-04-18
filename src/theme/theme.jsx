@@ -1,74 +1,55 @@
-// theme/theme.jsx
+export const palette = {
+  white: "#ffffff",
+  black: "#000000",
 
-// ===== 1. БАЗОВАЯ ПАЛИТРА =====
-const palette = {
-  white: "white",
-  black: "black",
+  gray: "#6b7280",
+  lightGray: "#e5e7eb",
 
-  gray: "gray",
-  lightGray: "lightgray",
-
-  blue: "blue",
-  green: "green",
-  red: "red",
-  purple: "purple",
-  orange: "orange",
+  blue: "#3b82f6",
+  green: "#22c55e",
+  red: "#ef4444",
+  purple: "#a855f7",
+  orange: "#f97316",
 };
 
-// ===== 2. ФУНКЦИЯ ТЕМЫ =====
-export const createTheme = (primary = "blue") => ({
-  palette,
+export const createTheme = (primary = "blue") => {
+  const main = palette[primary] || palette.blue;
 
-  colors: {
-    primary,
+  return {
+    colors: {
+      // главный цвет приложения
+      primary: main,
 
-    text: palette.black,
-    secondaryText: palette.gray,
+      // текст
+      text: palette.black,
+      secondaryText: palette.gray,
 
-    background: palette.white,
-    backgroundSecondary: palette.white,
+      // фоны
+      background: palette.white,
+      backgroundSecondary: "#f9fafb",
 
-    border: palette.lightGray,
+      // границы
+      border: palette.lightGray,
 
-    danger: palette.red,
-    success: palette.green,
-  },
+      // состояния
+      success: palette.green,
+      danger: palette.red,
 
-  spacing: {
-    xs: "4px",
-    sm: "8px",
-    md: "12px",
-    lg: "16px",
-    xl: "20px",
-  },
+      // 👇 ВАЖНО: цвета для аккаунтов
+      blue: palette.blue,
+      green: palette.green,
+      purple: palette.purple,
+      orange: palette.orange,
+    },
 
-  radius: {
-    sm: "8px",
-    md: "12px",
-    lg: "16px",
-  },
+    spacing: {
+      sm: 8,
+      md: 12,
+      lg: 16,
+    },
 
-  font: {
-    title: "18px",
-    subtitle: "13px",
-    body: "15px",
-  },
-
-  sizes: {
-    headerHeight: "64px",
-    navbarHeight: "64px",
-
-    buttonHeight: "44px",
-    inputHeight: "44px",
-
-    icon: "20px",
-  },
-
-  shadow: {
-    sm: "0 2px 6px rgba(0,0,0,0.05)",
-    md: "0 4px 12px rgba(0,0,0,0.08)",
-  },
-});
-
-// ===== 3. ДЕФОЛТ =====
-export const theme = createTheme();
+    sizes: {
+      navbarHeight: 70,
+    },
+  };
+};

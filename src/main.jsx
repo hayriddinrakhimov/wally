@@ -1,28 +1,13 @@
-import { StrictMode, useState, useEffect } from "react";
-import { createRoot } from "react-dom/client";
-import "./index.css";
-import App from "./App.jsx";
+import React from "react";
+import ReactDOM from "react-dom/client";
+import App from "./App";
+import "./index.css"; // ✅ ВОТ ЭТО КЛЮЧЕВО
 import { ThemeProvider } from "./theme/ThemeProvider";
 
-const Root = () => {
-  // 👉 храним primary ГЛОБАЛЬНО
-  const [primary, setPrimary] = useState(() => {
-    return localStorage.getItem("primary") || "blue";
-  });
-
-  useEffect(() => {
-    localStorage.setItem("primary", primary);
-  }, [primary]);
-
-  return (
-    <ThemeProvider primary={primary}>
-      <App setPrimary={setPrimary} />
+ReactDOM.createRoot(document.getElementById("root")).render(
+  <React.StrictMode>
+    <ThemeProvider>
+      <App />
     </ThemeProvider>
-  );
-};
-
-createRoot(document.getElementById("root")).render(
-  <StrictMode>
-    <Root />
-  </StrictMode>
+  </React.StrictMode>
 );

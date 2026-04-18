@@ -1,125 +1,111 @@
 import { useState } from "react";
 import { Header } from "./components/Header";
+import { MainContent } from "./components/MainContent";
 import { Navbar } from "./components/Navbar";
 import { BottomSheet } from "./components/BottomSheet";
-import { NotificationsContent } from "./components/NotificationsContent";
+
 import { SettingsContent } from "./components/SettingsContent";
-import { ColorPickerContent } from "./components/ColorPickerContent";
-import { useTheme } from "./theme/ThemeProvider";
+import { NotificationsContent } from "./components/NotificationsContent";
+import { TransactionContent } from "./components/TransactionContent";
 
-function App({ setPrimary }) {
-  const theme = useTheme();
-
-  console.log(theme);
-
+export default function App() {
   const [activeTab, setActiveTab] = useState("wallet");
   const [sheetType, setSheetType] = useState(null);
 
-  // ===== УВЕДОМЛЕНИЯ =====
-  const [notifications, setNotifications] = useState([
-    {
-      id: 1,
-      type: "stats",
-      title: "Обновлена статистика",
-      time: Date.now(),
-      read: false,
-    },
+  const [accounts, setAccounts] = useState([
+    { id: "cash", name: "Наличные", balance: 0 },
+    { id: "card", name: "Карта", balance: 0 },
+    { id: "deposit", name: "Депозит", balance: 0 },
   ]);
 
-  const hasUnread = notifications.some((n) => !n.read);
+  // 🔥 главный контроллер активного счета
+  const [activeIndex, setActiveIndex] = useState(0);
 
-  const openSheet = (type) => setSheetType(type);
-  const closeSheet = () => setSheetType(null);
+  const [transactions, setTransactions] = useState([]);
 
-  const handleNotificationClick = (notif) => {
-    setActiveTab(notif.type);
+  function applyTransaction(prevAccounts, tx) {
+    return prevAccounts.map((acc) => {
+      if (tx.type === "income" && acc.id === tx.to) {
+        return { ...acc, balance: acc.balance + tx.amount };
+      }
 
-    setNotifications((prev) =>
-      prev.map((n) =>
-        n.id === notif.id ? { ...n, read: true } : n
-      )
-    );
+      if (tx.type === "expense" && acc.id === tx.from) {
+        return { ...acc, balance: acc.balance - tx.amount };
+      }
 
-    closeSheet();
-  };
+      if (tx.type === "transfer") {
+        if (acc.id === tx.from) {
+          return { ...acc, balance: acc.balance - tx.amount };
+        }
+        if (acc.id === tx.to) {
+          return { ...acc, balance: acc.balance + tx.amount };
+        }
+      }
 
-  const markAllAsRead = () => {
-    setNotifications((prev) =>
-      prev.map((n) => ({ ...n, read: true }))
-    );
-  };
+      return acc;
+    });
+  }
 
-  const isSheetOpen = sheetType !== null;
+  function addTransaction(tx) {
+    setTransactions((prev) => [tx, ...prev]);
+    setAccounts((prev) => applyTransaction(prev, tx));
+  }
 
   return (
-    <div
-      style={{
-        minHeight: "100vh",
-        background: theme.colors.background,
-        paddingBottom: theme.sizes.navbarHeight,
-      }}
-    >
-      {/* HEADER */}
+    <>
       <Header
-        activeTab={activeTab}
-        onOpenSheet={openSheet}
-        hasUnread={hasUnread}
+        onOpenSettings={() => setSheetType("settings")}
+        onOpenNotifications={() => setSheetType("notifications")}
       />
 
-      {/* CONTENT */}
-      <main style={{ padding: theme.spacing.lg }} />
+      <MainContent
+        accounts={accounts}
+        activeIndex={activeIndex}
+        setActiveIndex={setActiveIndex}
+        onAdd={() => setSheetType("addAccount")}
+      />
 
-      {/* NAVBAR */}
       <Navbar
         activeTab={activeTab}
         setActiveTab={setActiveTab}
-        onOpenSheet={openSheet}
+        onOpenSheet={(type) => setSheetType(type)}
       />
 
-      {/* BOTTOM SHEET */}
       <BottomSheet
-        isOpen={isSheetOpen}
-        onClose={closeSheet}
+        open={!!sheetType}
+        onClose={() => setSheetType(null)}
         title={
           sheetType === "settings"
             ? "Настройки"
-            : sheetType === "colorPicker"
-            ? "Выбор цвета"
             : sheetType === "notifications"
             ? "Уведомления"
-            : null
-        }
-        onBack={
-          sheetType === "colorPicker"
-            ? () => setSheetType("settings")
-            : null
+            : sheetType === "add"
+            ? "Транзакция"
+            : "Добавить счет"
         }
       >
-        {sheetType === "notifications" && (
-          <NotificationsContent
-            notifications={notifications}
-            onClick={handleNotificationClick}
-            markAllAsRead={markAllAsRead}
-          />
-        )}
-
         {sheetType === "settings" && (
-          <SettingsContent
-            onOpenColorPicker={() =>
-              setSheetType("colorPicker")
-            }
+          <SettingsContent onOpenColorPicker={() => {}} />
+        )}
+
+        {sheetType === "notifications" && (
+          <NotificationsContent />
+        )}
+
+        {sheetType === "add" && (
+          <TransactionContent
+            accounts={accounts}
+            onSubmit={(tx) => {
+              addTransaction(tx);
+              setSheetType(null);
+            }}
           />
         )}
 
-        {sheetType === "colorPicker" && (
-          <ColorPickerContent
-            primary={theme.colors.primary}
-            setPrimary={setPrimary}
-          />
+        {sheetType === "addAccount" && (
+          <div style={{ padding: 16 }}>Добавление счета (заглушка)</div>
         )}
       </BottomSheet>
-    </div>
+    </>
   );
 }
-
-export default App;

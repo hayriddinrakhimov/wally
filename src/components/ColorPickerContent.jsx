@@ -1,78 +1,61 @@
-import { useTheme } from "../theme/ThemeProvider";
-
-const COLORS = [
-  "blue",
-  "royalblue",
-  "deepskyblue",
-  "green",
-  "limegreen",
-  "seagreen",
-  "red",
-  "crimson",
-  "tomato",
-  "purple",
-  "indigo",
-  "violet",
-  "orange",
-  "darkorange",
-  "gold",
-  "black",
-  "gray",
-  "brown",
-];
+import { palette } from "../theme/theme";
 
 export const ColorPickerContent = ({ primary, setPrimary }) => {
-  const theme = useTheme();
+  const colors = [
+    "blue",
+    "green",
+    "purple",
+    "orange",
+    "red",
+  ];
 
   return (
-    <div>
+    <div
+      style={{
+        padding: 16,
+        display: "flex",
+        flexDirection: "column",
+        gap: 16,
+      }}
+    >
+      <div style={{ fontWeight: 600 }}>
+        Основной цвет приложения
+      </div>
+
       <div
         style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(5, 1fr)",
-          justifyItems: "center",
-          gap: theme.spacing.md,
+          display: "flex",
+          gap: 12,
+          flexWrap: "wrap",
         }}
       >
-        {COLORS.map((color) => {
-          const isActive = primary === color;
+        {colors.map((color) => {
+          const isActive = primary === palette[color];
 
           return (
-            <button
+            <div
               key={color}
               onClick={() => setPrimary(color)}
               style={{
-                width: "48px",
-                height: "48px",
+                width: 48,
+                height: 48,
                 borderRadius: "50%",
-                background: color,
-
-                border: isActive
-                  ? `3px solid ${theme.colors.text}`
-                  : `2px solid ${theme.colors.border}`,
-
+                background: palette[color],
                 cursor: "pointer",
-
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-
-                transform: isActive ? "scale(1.1)" : "scale(1)",
-                transition: "all 0.15s ease",
+                border: isActive
+                  ? "3px solid black"
+                  : "2px solid #e5e7eb",
               }}
             >
               {isActive && (
-                <div
-                  style={{
-                    width: "10px",
-                    height: "10px",
-                    borderRadius: "50%",
-                    background:
-                      color === "white" ? "black" : "white",
-                  }}
-                />
+                <span style={{ color: "white", fontSize: 18 }}>
+                  ✓
+                </span>
               )}
-            </button>
+            </div>
           );
         })}
       </div>

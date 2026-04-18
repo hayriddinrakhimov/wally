@@ -1,28 +1,12 @@
-import * as Dialog from "@radix-ui/react-dialog";
-import { ArrowLeft, X } from "lucide-react";
-import { useTheme } from "../theme/ThemeProvider";
+import { X } from "lucide-react";
 
-export const BottomSheet = ({
-  isOpen,
-  onClose,
-  title,
-  onBack,
-  children,
-}) => {
-  const theme = useTheme();
-
-  const showHeader = Boolean(title || onBack);
-
+export const BottomSheet = ({ open, onClose, title, children }) => {
   return (
-    <Dialog.Root
-      open={isOpen}
-      onOpenChange={(open) => {
-        if (!open) onClose();
-      }}
-    >
-      <Dialog.Portal>
-        {/* OVERLAY */}
-        <Dialog.Overlay
+    <>
+      {/* OVERLAY */}
+      {open && (
+        <div
+          onClick={onClose}
           style={{
             position: "fixed",
             inset: 0,
@@ -30,123 +14,49 @@ export const BottomSheet = ({
             zIndex: 1000,
           }}
         />
+      )}
 
-        {/* SHEET */}
-        <Dialog.Content
+      {/* SHEET */}
+      <div
+        style={{
+          position: "fixed",
+          left: 0,
+          right: 0,
+          bottom: 0,
+          zIndex: 1001,
+          background: "var(--bg)",
+          borderTopLeftRadius: 20,
+          borderTopRightRadius: 20,
+          padding: 16,
+          transform: open ? "translateY(0%)" : "translateY(100%)",
+          transition: "transform 0.25s ease",
+        }}
+      >
+        {/* HEADER */}
+        <div
           style={{
-            position: "fixed",
-            bottom: 0,
-            left: 0,
-            width: "100%",
-            height: "85vh",
-
-            background: theme.colors.background,
-
-            borderTopLeftRadius: theme.radius.md,
-            borderTopRightRadius: theme.radius.md,
-
             display: "flex",
-            flexDirection: "column",
-            overflow: "hidden",
-
-            zIndex: 1001,
+            justifyContent: "space-between",
+            marginBottom: 16,
           }}
         >
-          {/* HANDLE */}
-          <div
+          <h3>{title}</h3>
+
+          <button
+            onClick={onClose}
             style={{
-              width: "36px",
-              height: "4px",
-              background: theme.colors.border,
-              borderRadius: "2px",
-              margin: "8px auto",
-            }}
-          />
-
-          {/* HEADER */}
-          {showHeader && (
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                padding: `0 ${theme.spacing.lg}`,
-                borderBottom: `1px solid ${theme.colors.border}`,
-                paddingBottom: theme.spacing.sm,
-                marginBottom: theme.spacing.md,
-              }}
-            >
-              {/* LEFT */}
-              <div style={{ width: "40px" }}>
-                {onBack && (
-                  <button style={iconBtn} onClick={onBack}>
-                    <ArrowLeft size={20} color={theme.colors.text} />
-                  </button>
-                )}
-              </div>
-
-              {/* TITLE */}
-              <div
-                style={{
-                  flex: 1,
-                  fontSize: theme.font.title,
-                  fontWeight: "600",
-                  color: theme.colors.text,
-                }}
-              >
-                {title}
-              </div>
-
-              {/* RIGHT */}
-              <div
-                style={{
-                  width: "40px",
-                  display: "flex",
-                  justifyContent: "flex-end",
-                }}
-              >
-                <button style={iconBtn} onClick={onClose}>
-                  <X size={20} color={theme.colors.text} />
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* CONTENT */}
-          <div
-            style={{
-              flex: 1,
-              overflowY: "auto",
-              padding: theme.spacing.lg,
-              paddingBottom: `calc(${theme.spacing.lg} + env(safe-area-inset-bottom))`,
-
-              // скрытие скролла
-              scrollbarWidth: "none",
-              msOverflowStyle: "none",
+              background: "none",
+              border: "none",
+              cursor: "pointer",
             }}
           >
-            <style>
-              {`
-                div::-webkit-scrollbar {
-                  display: none;
-                }
-              `}
-            </style>
+            <X size={20} />
+          </button>
+        </div>
 
-            {children}
-          </div>
-        </Dialog.Content>
-      </Dialog.Portal>
-    </Dialog.Root>
+        {/* CONTENT */}
+        {children}
+      </div>
+    </>
   );
-};
-
-const iconBtn = {
-  width: "40px",
-  height: "40px",
-  background: "transparent",
-  border: "none",
-  cursor: "pointer",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
 };

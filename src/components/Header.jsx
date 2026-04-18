@@ -1,154 +1,113 @@
 import { Bell, Settings, Wallet } from "lucide-react";
 import { useTheme } from "../theme/ThemeProvider";
-import { IconButton } from "./IconButton";
 
-// ===== ТИТУЛЫ =====
-const titles = {
-  wallet: {
-    title: "Wally",
-    subtitle: "Ваш личный кошелек",
-  },
-  stats: {
-    title: "Аналитика",
-    subtitle: "Статистика финансов",
-  },
-  subscriptions: {
-    title: "Подписки",
-    subtitle: "Регулярные платежи",
-  },
-  deposit: {
-    title: "Депозит",
-    subtitle: "Ваши накопления",
-  },
-};
-
-export const Header = ({
-  activeTab,
-  onOpenSheet,
-  hasUnread,
-}) => {
-  const theme = useTheme(); // ✅ только внутри
-
-  const current = titles[activeTab] || titles.wallet;
+export const Header = ({ onOpenSheet, hasUnread }) => {
+  const theme = useTheme() || {};
+  const colors = theme.colors || {};
+  const spacing = theme.spacing || {};
 
   return (
     <header
       style={{
-        height: theme.sizes.headerHeight,
-        paddingTop: "env(safe-area-inset-top)",
-
         display: "flex",
         alignItems: "center",
         justifyContent: "space-between",
-
-        paddingLeft: theme.spacing.lg,
-        paddingRight: theme.spacing.lg,
-
-        borderBottom: `1px solid ${theme.colors.border}`,
-        background: theme.colors.background,
+        padding: `${spacing.md || 12}px ${spacing.lg || 16}px`,
+        borderBottom: `1px solid ${colors.border || "#e5e7eb"}`,
+        background: colors.background || "#fff",
       }}
     >
-      {/* ===== ЛЕВАЯ ЧАСТЬ ===== */}
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: theme.spacing.md,
-        }}
-      >
-        {/* ЛОГО */}
+      {/* LEFT */}
+      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+        {/* LOGO */}
         <div
           style={{
-            width: "40px",
-            height: "40px",
-            borderRadius: theme.radius.md,
-            background: theme.colors.primary,
-
+            width: 36,
+            height: 36,
+            borderRadius: 10,
+            background: `linear-gradient(135deg, ${
+              colors.primary || "#3b82f6"
+            }, #000)`,
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            flexShrink: 0,
           }}
         >
-          <Wallet size={20} color="white" />
+          <Wallet size={18} color="#fff" />
         </div>
 
-        {/* ТЕКСТ */}
-        <div
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            justifyContent: "center",
-            lineHeight: "1.2",
-          }}
-        >
+        {/* TEXT */}
+        <div style={{ display: "flex", flexDirection: "column" }}>
           <span
             style={{
-              fontSize: theme.font.title,
-              fontWeight: "600",
-              color: theme.colors.text,
+              fontWeight: 600,
+              fontSize: 16,
+              color: colors.text || "#000",
+              lineHeight: 1,
             }}
           >
-            {current.title}
+            Wally
           </span>
 
           <span
             style={{
-              fontSize: theme.font.subtitle,
-              color: theme.colors.secondaryText,
+              fontSize: 12,
+              color: colors.secondaryText || "#6b7280",
+              marginTop: 2,
             }}
           >
-            {current.subtitle}
+            Ваш личный кошелек
           </span>
         </div>
       </div>
 
-      {/* ===== ПРАВАЯ ЧАСТЬ ===== */}
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: theme.spacing.sm,
-        }}
-      >
-        {/* УВЕДОМЛЕНИЯ */}
-        <IconButton onClick={() => onOpenSheet("notifications")}>
-          <div style={iconWrap}>
-            <Bell size={20} color={theme.colors.text} />
+      {/* RIGHT */}
+      <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+        {/* NOTIFICATIONS */}
+        <div
+          onClick={() => onOpenSheet("notifications")}
+          style={{
+            position: "relative",
+            width: 36,
+            height: 36,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            cursor: "pointer",
+          }}
+        >
+          <Bell size={20} color={colors.text || "#000"} />
 
-            {hasUnread && (
-              <span
-                style={{
-                  position: "absolute",
-                  top: "2px",
-                  right: "2px",
-                  width: "6px",
-                  height: "6px",
-                  borderRadius: "50%",
-                  background: theme.colors.primary,
-                }}
-              />
-            )}
-          </div>
-        </IconButton>
+          {hasUnread && (
+            <span
+              style={{
+                position: "absolute",
+                top: 6,
+                right: 6,
+                width: 8,
+                height: 8,
+                borderRadius: "50%",
+                background: colors.primary || "#3b82f6",
+              }}
+            />
+          )}
+        </div>
 
-        {/* НАСТРОЙКИ */}
-        <IconButton onClick={() => onOpenSheet("settings")}>
-          <div style={iconWrap}>
-            <Settings size={20} color={theme.colors.text} />
-          </div>
-        </IconButton>
+        {/* SETTINGS */}
+        <div
+          onClick={() => onOpenSheet("settings")}
+          style={{
+            width: 36,
+            height: 36,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            cursor: "pointer",
+          }}
+        >
+          <Settings size={20} color={colors.text || "#000"} />
+        </div>
       </div>
     </header>
   );
-};
-
-// ===== ОБЩИЙ КОНТЕЙНЕР ДЛЯ ИКОНОК =====
-const iconWrap = {
-  position: "relative",
-  width: "20px",
-  height: "20px",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
 };

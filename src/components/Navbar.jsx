@@ -1,25 +1,19 @@
-import { Wallet, BarChart, Repeat, PiggyBank, Plus } from "lucide-react";
+import { Wallet, BarChart3, Plus, Repeat, PiggyBank } from "lucide-react";
 import { useTheme } from "../theme/ThemeProvider";
 
-export const Navbar = ({
-  activeTab,
-  setActiveTab,
-  onOpenSheet,
-}) => {
-  const theme = useTheme();
+export const Navbar = ({ activeTab, setActiveTab, onOpenSheet }) => {
+  const theme = useTheme() || {};
 
-  const primary = theme.colors.primary; // ✅ ВСЕГДА отсюда
+  const spacing = theme.spacing || {};
+  const colors = theme.colors || {};
+  const sizes = theme.sizes || {};
 
   const items = [
-    { id: "wallet", icon: Wallet },
-    { id: "stats", icon: BarChart },
-    { id: "subscriptions", icon: Repeat },
-    { id: "deposit", icon: PiggyBank },
+    { key: "wallet", icon: Wallet },
+    { key: "stats", icon: BarChart3 },
+    { key: "transfer", icon: Repeat },
+    { key: "goals", icon: PiggyBank },
   ];
-
-  const handlePress = (e, scale) => {
-    e.currentTarget.style.transform = `scale(${scale})`;
-  };
 
   return (
     <nav
@@ -27,109 +21,75 @@ export const Navbar = ({
         position: "fixed",
         bottom: 0,
         left: 0,
-        width: "100%",
-        height: theme.sizes.navbarHeight,
-
-        paddingBottom: "env(safe-area-inset-bottom)",
-
-        background: theme.colors.background,
-        borderTop: `1px solid ${theme.colors.border}`,
-
+        right: 0,
+        height: sizes.navbarHeight || 70,
+        background: colors.background || "#fff",
+        borderTop: `1px solid ${colors.border || "#e5e7eb"}`,
         display: "flex",
         alignItems: "center",
         justifyContent: "space-around",
+        padding: spacing.md || 12,
+        zIndex: 100,
       }}
     >
-      {/* ЛЕВАЯ */}
       {items.slice(0, 2).map((item) => {
         const Icon = item.icon;
-        const isActive = activeTab === item.id;
+        const isActive = activeTab === item.key;
 
         return (
-          <button
-            key={item.id}
-            onClick={() => setActiveTab(item.id)}
-            style={navButton}
-            onMouseDown={(e) => handlePress(e, 0.9)}
-            onMouseUp={(e) => handlePress(e, 1)}
-            onMouseLeave={(e) => handlePress(e, 1)}
+          <div
+            key={item.key}
+            onClick={() => setActiveTab(item.key)}
+            style={{
+              cursor: "pointer",
+              color: isActive
+                ? colors.primary || "#3b82f6"
+                : colors.secondaryText || "#6b7280",
+            }}
           >
-            <Icon
-              size={20}
-              color={isActive ? primary : theme.colors.secondaryText}
-            />
-          </button>
+            <Icon size={22} />
+          </div>
         );
       })}
 
-      {/* ОТСТУП */}
-      <div style={{ width: "64px" }} />
-
-      {/* ПРАВАЯ */}
-      {items.slice(2).map((item) => {
-        const Icon = item.icon;
-        const isActive = activeTab === item.id;
-
-        return (
-          <button
-            key={item.id}
-            onClick={() => setActiveTab(item.id)}
-            style={navButton}
-            onMouseDown={(e) => handlePress(e, 0.9)}
-            onMouseUp={(e) => handlePress(e, 1)}
-            onMouseLeave={(e) => handlePress(e, 1)}
-          >
-            <Icon
-              size={20}
-              color={isActive ? primary : theme.colors.secondaryText}
-            />
-          </button>
-        );
-      })}
-
-      {/* FAB */}
-      <button
-        onClick={() => onOpenSheet && onOpenSheet("add")}
+      {/* КНОПКА + */}
+      <div
+        onClick={() => onOpenSheet("add")}
         style={{
-          position: "absolute",
-          left: "50%",
-          transform: "translateX(-50%)",
-          top: "-28px",
-
-          width: "56px",
-          height: "56px",
+          width: 56,
+          height: 56,
           borderRadius: "50%",
-
-          background: primary, // ✅ теперь работает всегда
-          border: "none",
-
+          background: colors.primary || "#3b82f6",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-
+          marginTop: -30,
           cursor: "pointer",
-          zIndex: 10,
-
-          boxShadow: theme.shadow.md,
+          boxShadow: "0 10px 20px rgba(0,0,0,0.2)",
         }}
       >
-        <Plus size={24} color="white" />
-      </button>
+        <Plus size={24} color="#fff" />
+      </div>
+
+      {items.slice(2).map((item) => {
+        const Icon = item.icon;
+        const isActive = activeTab === item.key;
+
+        return (
+          <div
+            key={item.key}
+            onClick={() => setActiveTab(item.key)}
+            style={{
+              cursor: "pointer",
+              color: isActive
+                ? colors.primary || "#3b82f6"
+                : colors.secondaryText || "#6b7280",
+            }}
+          >
+            <Icon size={22} />
+          </div>
+        );
+      })}
     </nav>
   );
-};
-
-const navButton = {
-  width: "48px",
-  height: "48px",
-
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-
-  background: "transparent",
-  border: "none",
-  cursor: "pointer",
-
-  transition: "transform 0.1s ease",
 };
