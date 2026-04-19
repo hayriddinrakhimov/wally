@@ -1,13 +1,11 @@
 import { palette } from "../theme/theme";
 
-export const ColorPickerContent = ({ primary, setPrimary }) => {
-  const colors = [
-    "blue",
-    "green",
-    "purple",
-    "orange",
-    "red",
-  ];
+export const ColorPickerContent = ({
+  value,
+  onChange,
+  title = "Выбор цвета",
+}) => {
+  const colors = ["blue", "green", "purple", "orange", "red"];
 
   return (
     <div
@@ -18,10 +16,10 @@ export const ColorPickerContent = ({ primary, setPrimary }) => {
         gap: 16,
       }}
     >
-      <div style={{ fontWeight: 600 }}>
-        Основной цвет приложения
-      </div>
+      {/* 🔥 ЗАГОЛОВОК */}
+      <div style={{ fontWeight: 600 }}>{title}</div>
 
+      {/* 🔥 ЦВЕТА */}
       <div
         style={{
           display: "flex",
@@ -30,12 +28,12 @@ export const ColorPickerContent = ({ primary, setPrimary }) => {
         }}
       >
         {colors.map((color) => {
-          const isActive = primary === palette[color];
+          const isActive = value === color;
 
           return (
             <div
               key={color}
-              onClick={() => setPrimary(color)}
+              onClick={() => onChange(color)} // ✅ теперь работает
               style={{
                 width: 48,
                 height: 48,
