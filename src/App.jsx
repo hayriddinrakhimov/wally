@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useLocalStorage } from "./hooks/useLocalStorage";
 
 import { Header } from "./components/Header";
 import { MainContent } from "./components/MainContent";
@@ -15,9 +16,10 @@ export default function App() {
   const [activeTab, setActiveTab] = useState("wallet");
   const [sheetType, setSheetType] = useState(null);
 
-  const [accounts, setAccounts] = useState([]);
-  const [activeIndex, setActiveIndex] = useState(0);
-  const [transactions, setTransactions] = useState([]);
+  // 🔥 ВОТ ТУТ МАГИЯ — заменили только это
+  const [accounts, setAccounts] = useLocalStorage("accounts", []);
+  const [transactions, setTransactions] = useLocalStorage("transactions", []);
+  const [activeIndex, setActiveIndex] = useLocalStorage("activeIndex", 0);
 
   // редактирование счета
   const [editingAccount, setEditingAccount] = useState(null);
@@ -91,17 +93,16 @@ export default function App() {
         minHeight: "100vh",
       }}
     >
-      
       <Header
-      onOpenSettings={() => setSheetType("settings")}
-      onOpenNotifications={() => setSheetType("notifications")}
-      disabled={!!sheetType}
+        onOpenSettings={() => setSheetType("settings")}
+        onOpenNotifications={() => setSheetType("notifications")}
+        disabled={!!sheetType}
       />
 
       {/* ===== ОСНОВНОЙ КОНТЕНТ ===== */}
       <div
         style={{
-          paddingTop: 80, // 👈 под фиксированный хедер
+          paddingTop: 80,
         }}
       >
         <MainContent
@@ -127,7 +128,7 @@ export default function App() {
         />
       </div>
 
-      {/* ===== BOTTOM SHEET (ПОВЕРХ ВСЕГО) ===== */}
+      {/* ===== BOTTOM SHEET ===== */}
       <BottomSheet
         open={!!sheetType}
         onClose={() => {
@@ -150,15 +151,12 @@ export default function App() {
             : ""
         }
       >
-        {/* ===== НАСТРОЙКИ ===== */}
         {sheetType === "settings" && (
           <SettingsContent onOpenColorPicker={() => {}} />
         )}
 
-        {/* ===== УВЕДОМЛЕНИЯ ===== */}
         {sheetType === "notifications" && <NotificationsContent />}
 
-        {/* ===== ТРАНЗАКЦИЯ ===== */}
         {sheetType === "add" && (
           <TransactionContent
             accounts={accounts}
@@ -169,7 +167,6 @@ export default function App() {
           />
         )}
 
-        {/* ===== СЧЕТ ===== */}
         {sheetType === "account" && (
           <AccountFormContent
             account={editingAccount}
@@ -179,7 +176,6 @@ export default function App() {
           />
         )}
 
-        {/* ===== ЦВЕТ СЧЕТА ===== */}
         {sheetType === "accountColor" && (
           <AccountColorPickerContent
             value={accountColor}
