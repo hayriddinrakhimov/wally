@@ -1,16 +1,23 @@
 import { useTheme } from "../theme/ThemeProvider";
+import {
+  Palette,
+  Download,
+  Upload,
+  Trash2,
+} from "lucide-react";
 
 export const SettingsContent = ({ onOpenColorPicker }) => {
   const theme = useTheme();
-  const primary = theme.colors.primary; // ✅ ВСЕГДА отсюда
+  const primary = theme.colors.primary;
 
   return (
-    <div>
+    <div style={{ paddingBottom: 32 }}>
       {/* ===== ВНЕШНИЙ ВИД ===== */}
       <SectionTitle>Внешний вид</SectionTitle>
 
       <Block>
         <Row
+          icon={<Palette size={18} />}
           title="Основной цвет"
           subtitle="Меняет цвет приложения"
           right={<ColorDot color={primary} />}
@@ -18,26 +25,18 @@ export const SettingsContent = ({ onOpenColorPicker }) => {
         />
       </Block>
 
-      {/* ===== ФИНАНСЫ ===== */}
-      <SectionTitle>Финансы</SectionTitle>
-
-      <Block>
-        <Row
-          title="Добавить счет"
-          subtitle="Создать новый счет"
-        />
-      </Block>
-
       {/* ===== ДАННЫЕ ===== */}
-      <SectionTitle>Данные</SectionTitle>
+      <SectionTitle>Данные и импорт</SectionTitle>
 
       <Block>
         <Row
+          icon={<Download size={18} />}
           title="Экспорт данных"
           subtitle="Скачать JSON файл"
         />
         <Divider />
         <Row
+          icon={<Upload size={18} />}
           title="Импорт данных"
           subtitle="Загрузить JSON"
         />
@@ -48,6 +47,7 @@ export const SettingsContent = ({ onOpenColorPicker }) => {
 
       <Block>
         <Row
+          icon={<Trash2 size={18} />}
           title="Удалить все данные"
           subtitle="Полный сброс приложения"
           danger
@@ -68,8 +68,8 @@ export const SettingsContent = ({ onOpenColorPicker }) => {
         >
           <div
             style={{
-              width: "40px",
-              height: "40px",
+              width: 44,
+              height: 44,
               borderRadius: "50%",
               background: primary,
               color: "white",
@@ -77,6 +77,7 @@ export const SettingsContent = ({ onOpenColorPicker }) => {
               alignItems: "center",
               justifyContent: "center",
               fontWeight: "600",
+              fontSize: 18,
             }}
           >
             W
@@ -86,7 +87,7 @@ export const SettingsContent = ({ onOpenColorPicker }) => {
             <div
               style={{
                 color: theme.colors.text,
-                fontWeight: "500",
+                fontWeight: "600",
               }}
             >
               Wally
@@ -94,7 +95,7 @@ export const SettingsContent = ({ onOpenColorPicker }) => {
 
             <div
               style={{
-                fontSize: theme.font.subtitle,
+                fontSize: theme.font?.subtitle || 12,
                 color: theme.colors.secondaryText,
               }}
             >
@@ -107,7 +108,7 @@ export const SettingsContent = ({ onOpenColorPicker }) => {
   );
 };
 
-/* ===== КОМПОНЕНТЫ ===== */
+/* ===== COMPONENTS ===== */
 
 const SectionTitle = ({ children }) => {
   const theme = useTheme();
@@ -115,9 +116,12 @@ const SectionTitle = ({ children }) => {
   return (
     <div
       style={{
-        fontSize: theme.font.subtitle,
+        fontSize: 12,
+        fontWeight: 600,
         color: theme.colors.secondaryText,
-        margin: `${theme.spacing.lg} 0 ${theme.spacing.sm}`,
+        margin: `${theme.spacing.xl}px 0 ${theme.spacing.md}px`,
+        textTransform: "uppercase",
+        letterSpacing: 0.6,
       }}
     >
       {children}
@@ -131,9 +135,12 @@ const Block = ({ children }) => {
   return (
     <div
       style={{
-        borderRadius: theme.radius.md,
+        borderRadius: theme.radius.lg,
         overflow: "hidden",
+        background: theme.colors.background,
         border: `1px solid ${theme.colors.border}`,
+        boxShadow: "0 4px 12px rgba(0,0,0,0.05)",
+        marginBottom: theme.spacing.md,
       }}
     >
       {children}
@@ -141,7 +148,7 @@ const Block = ({ children }) => {
   );
 };
 
-const Row = ({ title, subtitle, right, onClick, danger }) => {
+const Row = ({ icon, title, subtitle, right, onClick, danger }) => {
   const theme = useTheme();
 
   return (
@@ -151,44 +158,79 @@ const Row = ({ title, subtitle, right, onClick, danger }) => {
         display: "flex",
         alignItems: "center",
         justifyContent: "space-between",
-        padding: theme.spacing.lg,
+
+        paddingTop: theme.spacing.lg,
+        paddingBottom: theme.spacing.lg,
+        paddingRight: theme.spacing.lg,
+        paddingLeft: onClick
+          ? theme.spacing.lg - 3
+          : theme.spacing.lg,
+
         cursor: onClick ? "pointer" : "default",
-        transition: "transform 0.1s ease",
+        transition: "all 0.15s ease",
+        WebkitTapHighlightColor: "transparent",
       }}
-      onMouseDown={(e) =>
-        (e.currentTarget.style.transform = "scale(0.98)")
-      }
-      onMouseUp={(e) =>
-        (e.currentTarget.style.transform = "scale(1)")
-      }
-      onMouseLeave={(e) =>
-        (e.currentTarget.style.transform = "scale(1)")
-      }
+      onMouseDown={(e) => {
+        e.currentTarget.style.transform = "scale(0.97)";
+        e.currentTarget.style.opacity = "0.7";
+      }}
+      onMouseUp={(e) => {
+        e.currentTarget.style.transform = "scale(1)";
+        e.currentTarget.style.opacity = "1";
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.transform = "scale(1)";
+        e.currentTarget.style.opacity = "1";
+      }}
     >
-      <div>
+      {/* LEFT */}
+      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
         <div
           style={{
+            width: 34,
+            height: 34,
+            borderRadius: 10,
+            background: danger
+              ? "rgba(239,68,68,0.1)"
+              : "rgba(0,0,0,0.05)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
             color: danger
               ? theme.colors.danger
               : theme.colors.text,
-            fontWeight: "500",
           }}
         >
-          {title}
+          {icon}
         </div>
 
-        {subtitle && (
+        <div>
           <div
             style={{
-              fontSize: theme.font.subtitle,
-              color: theme.colors.secondaryText,
+              color: danger
+                ? theme.colors.danger
+                : theme.colors.text,
+              fontWeight: "500",
             }}
           >
-            {subtitle}
+            {title}
           </div>
-        )}
+
+          {subtitle && (
+            <div
+              style={{
+                fontSize: theme.font?.subtitle || 12,
+                color: theme.colors.secondaryText,
+                marginTop: 2,
+              }}
+            >
+              {subtitle}
+            </div>
+          )}
+        </div>
       </div>
 
+      {/* RIGHT */}
       {right}
     </div>
   );
@@ -200,9 +242,9 @@ const Divider = () => {
   return (
     <div
       style={{
-        height: "1px",
+        height: 1,
         background: theme.colors.border,
-        marginLeft: theme.spacing.lg,
+        marginLeft: 56,
       }}
     />
   );
@@ -211,11 +253,12 @@ const Divider = () => {
 const ColorDot = ({ color }) => (
   <div
     style={{
-      width: "16px",
-      height: "16px",
+      width: 18,
+      height: 18,
       borderRadius: "50%",
       background: color,
       border: "2px solid white",
+      boxShadow: "0 0 0 2px rgba(0,0,0,0.05)",
     }}
   />
 );

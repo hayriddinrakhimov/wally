@@ -1,25 +1,42 @@
 import { Bell, Settings, Wallet } from "lucide-react";
 import { useTheme } from "../theme/ThemeProvider";
 
-export const Header = ({ onOpenSheet, hasUnread }) => {
+export const Header = ({
+  onOpenSettings,
+  onOpenNotifications,
+  hasUnread,
+  disabled,
+}) => {
   const theme = useTheme() || {};
+
   const colors = theme.colors || {};
   const spacing = theme.spacing || {};
+  const sizes = theme.sizes || {};
 
   return (
     <header
       style={{
+        position: "sticky",
+        top: 0,
+        zIndex: 50,
+
+        height: sizes.headerHeight || 70, // 👈 фикс высота
+        padding: `0 ${spacing.lg || 16}px`,
+
         display: "flex",
         alignItems: "center",
         justifyContent: "space-between",
-        padding: `${spacing.md || 12}px ${spacing.lg || 16}px`,
+
         borderBottom: `1px solid ${colors.border || "#e5e7eb"}`,
         background: colors.background || "#fff",
+
+        transition: "opacity 0.2s ease",
+        opacity: disabled ? 0.4 : 1,
+        pointerEvents: disabled ? "none" : "auto",
       }}
     >
       {/* LEFT */}
       <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-        {/* LOGO */}
         <div
           style={{
             width: 36,
@@ -36,7 +53,6 @@ export const Header = ({ onOpenSheet, hasUnread }) => {
           <Wallet size={18} color="#fff" />
         </div>
 
-        {/* TEXT */}
         <div style={{ display: "flex", flexDirection: "column" }}>
           <span
             style={{
@@ -63,9 +79,8 @@ export const Header = ({ onOpenSheet, hasUnread }) => {
 
       {/* RIGHT */}
       <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-        {/* NOTIFICATIONS */}
         <div
-          onClick={() => onOpenSheet("notifications")}
+          onClick={onOpenNotifications}
           style={{
             position: "relative",
             width: 36,
@@ -74,6 +89,7 @@ export const Header = ({ onOpenSheet, hasUnread }) => {
             alignItems: "center",
             justifyContent: "center",
             cursor: "pointer",
+            WebkitTapHighlightColor: "transparent",
           }}
         >
           <Bell size={20} color={colors.text || "#000"} />
@@ -93,9 +109,8 @@ export const Header = ({ onOpenSheet, hasUnread }) => {
           )}
         </div>
 
-        {/* SETTINGS */}
         <div
-          onClick={() => onOpenSheet("settings")}
+          onClick={onOpenSettings}
           style={{
             width: 36,
             height: 36,
@@ -103,6 +118,7 @@ export const Header = ({ onOpenSheet, hasUnread }) => {
             alignItems: "center",
             justifyContent: "center",
             cursor: "pointer",
+            WebkitTapHighlightColor: "transparent",
           }}
         >
           <Settings size={20} color={colors.text || "#000"} />

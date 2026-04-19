@@ -85,34 +85,49 @@ export default function App() {
   /* ===================== UI ===================== */
 
   return (
-    <>
+    <div
+      style={{
+        position: "relative",
+        minHeight: "100vh",
+      }}
+    >
+      
       <Header
-        onOpenSettings={() => setSheetType("settings")}
-        onOpenNotifications={() => setSheetType("notifications")}
+      onOpenSettings={() => setSheetType("settings")}
+      onOpenNotifications={() => setSheetType("notifications")}
+      disabled={!!sheetType}
       />
 
-      <MainContent
-        accounts={accounts}
-        activeIndex={activeIndex}
-        setActiveIndex={setActiveIndex}
-        onAdd={() => {
-          setEditingAccount(null);
-          setAccountColor("blue");
-          setSheetType("account");
+      {/* ===== ОСНОВНОЙ КОНТЕНТ ===== */}
+      <div
+        style={{
+          paddingTop: 80, // 👈 под фиксированный хедер
         }}
-        onEdit={(acc) => {
-          setEditingAccount(acc);
-          setAccountColor(acc.color || "blue");
-          setSheetType("account");
-        }}
-      />
+      >
+        <MainContent
+          accounts={accounts}
+          activeIndex={activeIndex}
+          setActiveIndex={setActiveIndex}
+          onAdd={() => {
+            setEditingAccount(null);
+            setAccountColor("blue");
+            setSheetType("account");
+          }}
+          onEdit={(acc) => {
+            setEditingAccount(acc);
+            setAccountColor(acc.color || "blue");
+            setSheetType("account");
+          }}
+        />
 
-      <Navbar
-        activeTab={activeTab}
-        setActiveTab={setActiveTab}
-        onOpenSheet={(type) => setSheetType(type)}
-      />
+        <Navbar
+          activeTab={activeTab}
+          setActiveTab={setActiveTab}
+          onOpenSheet={(type) => setSheetType(type)}
+        />
+      </div>
 
+      {/* ===== BOTTOM SHEET (ПОВЕРХ ВСЕГО) ===== */}
       <BottomSheet
         open={!!sheetType}
         onClose={() => {
@@ -175,6 +190,6 @@ export default function App() {
           />
         )}
       </BottomSheet>
-    </>
+    </div>
   );
 }
