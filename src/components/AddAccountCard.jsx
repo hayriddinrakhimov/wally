@@ -9,8 +9,14 @@ export const AddAccountCard = ({ onClick }) => {
         borderRadius: 20,
         padding: 18,
 
-        background: "#f3f4f6",
-        color: "#111",
+        // ❗ убираем серый фон
+        background: "transparent",
+
+        // ✅ делаем акцент через бордер
+        border: "2px dashed var(--primary)",
+
+        // цвет под тему
+        color: "var(--primary)",
 
         display: "flex",
         flexDirection: "column",
@@ -20,6 +26,9 @@ export const AddAccountCard = ({ onClick }) => {
 
         cursor: "pointer",
         userSelect: "none",
+
+        // 💡 легкий hover (если добавишь потом)
+        transition: "0.2s ease",
       }}
     >
       <Plus size={28} />
