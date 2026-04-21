@@ -20,7 +20,6 @@ export default function App() {
   const [sheetType, setSheetType] = useState(null);
 
   const setPrimary = useSetPrimary();
-
   const [primaryKey, setPrimaryKey] = useLocalStorage("primaryColor", "blue");
 
   useEffect(() => {
@@ -69,14 +68,10 @@ export default function App() {
 
   /* ===================== СЧЕТА ===================== */
 
-  function handleSaveAccount() {
-    if (!editingAccount) return;
-
+  function handleSaveAccount(data) {
     setAccounts((prev) =>
       prev.map((acc) =>
-        acc.id === editingAccount.id
-          ? { ...acc, color: accountColor }
-          : acc
+        acc.id === data.id ? { ...acc, ...data } : acc
       )
     );
 
@@ -101,28 +96,26 @@ export default function App() {
   /* ===================== FOOTER ===================== */
 
   const renderFooter = () => {
-    // транзакция
     if (sheetType === "add") {
       return (
         <button
           style={btnStyle}
-          onClick={() => {
-            document.dispatchEvent(new Event("submitTransaction"));
-          }}
+          onClick={() =>
+            document.dispatchEvent(new Event("submitTransaction"))
+          }
         >
           Сохранить
         </button>
       );
     }
 
-    // счет
     if (sheetType === "account") {
       return (
         <button
           style={btnStyle}
-          onClick={() => {
-            document.dispatchEvent(new Event("submitAccount"));
-          }}
+          onClick={() =>
+            document.dispatchEvent(new Event("submitAccount"))
+          }
         >
           {editingAccount ? "Сохранить" : "Создать"}
         </button>
@@ -244,6 +237,13 @@ export default function App() {
             account={editingAccount}
             color={accountColor}
             onOpenColorPicker={() => setSheetType("accountColor")}
+            onSave={(data) => {
+              if (editingAccount) {
+                handleSaveAccount(data);
+              } else {
+                handleCreateAccount(data);
+              }
+            }}
           />
         )}
 

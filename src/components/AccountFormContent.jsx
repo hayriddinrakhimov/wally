@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useTheme } from "../theme/ThemeProvider";
 
 export const AccountFormContent = ({
@@ -14,14 +14,33 @@ export const AccountFormContent = ({
     account?.currency || "KZT"
   );
 
+  /* ================= SUBMIT ================= */
+
   const handleSubmit = () => {
     if (!name.trim()) return;
+
+    if (typeof onSave !== "function") {
+      console.warn("onSave не передан");
+      return;
+    }
 
     onSave({
       name,
       currency,
     });
   };
+
+  // 💥 СЛУШАЕМ кнопку снизу (footer)
+  useEffect(() => {
+    const handler = () => handleSubmit();
+
+    document.addEventListener("submitAccount", handler);
+
+    return () =>
+      document.removeEventListener("submitAccount", handler);
+  }, [name, currency, onSave]);
+
+  /* ================= UI ================= */
 
   return (
     <div>
@@ -90,30 +109,11 @@ export const AccountFormContent = ({
           onClick={onOpenColorPicker}
         />
       </Block>
-
-      {/* ===== КНОПКА ===== */}
-      <div style={{ padding: 16 }}>
-        <button
-          onClick={handleSubmit}
-          style={{
-            width: "100%",
-            padding: 14,
-            borderRadius: 12,
-            border: "none",
-            background: theme.colors.primary,
-            color: "white",
-            fontWeight: "600",
-            fontSize: 16,
-          }}
-        >
-          Сохранить
-        </button>
-      </div>
     </div>
   );
 };
 
-/* ================= ПРЕВЬЮ КАРТЫ ================= */
+/* ================= ПРЕВЬЮ ================= */
 
 const gradients = {
   blue: "linear-gradient(135deg, #3b82f6, #1e293b)",

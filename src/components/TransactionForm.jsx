@@ -13,11 +13,11 @@ import {
   Heart,
   Sparkles,
   Plus,
+  Check,
 } from "lucide-react";
 
 /* ================= ICON MATCH ================= */
 
-// 🔥 теперь и RU и EN
 const ICON_KEYWORDS = [
   { keys: ["еда", "food", "продукт"], icon: ShoppingCart },
   { keys: ["кофе", "cafe", "coffee"], icon: Coffee },
@@ -31,13 +31,11 @@ const ICON_KEYWORDS = [
 
 const getIcon = (label = "") => {
   const text = label.toLowerCase();
-
   for (const item of ICON_KEYWORDS) {
     if (item.keys.some((k) => text.includes(k))) {
       return item.icon;
     }
   }
-
   return Sparkles;
 };
 
@@ -85,14 +83,15 @@ export const TransactionForm = ({ type, accounts, onSubmit }) => {
   const [to, setTo] = useState("");
 
   const [categories, setCategories] = useLocalStorage(
-    "categories",
+    "categories_v3",
     defaultCategories
   );
 
   const [adding, setAdding] = useState(false);
   const [newCategory, setNewCategory] = useState("");
 
-  const currentCategories = categories[type] || [];
+  const currentCategories =
+    type === "transfer" ? [] : categories[type] || [];
 
   useEffect(() => {
     if (accounts.length > 0) {
@@ -104,19 +103,31 @@ export const TransactionForm = ({ type, accounts, onSubmit }) => {
   /* ================= SUBMIT ================= */
 
   const handleSubmit = () => {
+    if (typeof onSubmit !== "function") {
+      console.warn("onSubmit не передан");
+      return;
+    }
+
     const value = parseNumber(amount);
     if (!value) return;
 
-    onSubmit({
+    const tx = {
       id: Date.now().toString(),
       type,
       amount: value,
       category,
       unexpected,
-      from,
-      to,
       createdAt: new Date().toISOString(),
-    });
+    };
+
+    if (type === "expense") tx.from = from;
+    if (type === "income") tx.to = to;
+    if (type === "transfer") {
+      tx.from = from;
+      tx.to = to;
+    }
+
+    onSubmit(tx);
 
     setAmount("");
     setCategory(null);
@@ -153,8 +164,18 @@ export const TransactionForm = ({ type, accounts, onSubmit }) => {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+      
       {/* 💰 AMOUNT */}
-      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          borderRadius: 20,
+          padding: "14px 16px",
+          background: "var(--card)",
+          border: "1px solid var(--border)",
+        }}
+      >
         <input
           value={amount}
           onChange={(e) =>
@@ -163,33 +184,53 @@ export const TransactionForm = ({ type, accounts, onSubmit }) => {
           placeholder="0"
           style={{
             flex: 1,
-            fontSize: 40,
+            minWidth: 0,
+            fontSize: 32,
+            fontWeight: 700,
             border: "none",
             outline: "none",
-            fontWeight: 700,
+            background: "transparent",
           }}
         />
 
-        {/* 💱 MOCK CURRENCY */}
-        <div style={{ fontWeight: 600, opacity: 0.6 }}>
-          ₸
-        </div>
-
-        {/* ⚡ unexpected */}
         <div
-          onClick={() => setUnexpected(!unexpected)}
           style={{
-            padding: "6px 10px",
-            borderRadius: 10,
-            background: unexpected
-              ? "var(--primary)"
-              : "var(--border)",
-            color: unexpected ? "#fff" : "#000",
-            cursor: "pointer",
-            fontSize: 12,
+            display: "flex",
+            alignItems: "center",
+            gap: 8,
+            marginLeft: 8,
           }}
         >
-          ⚡
+          <div
+            style={{
+              fontWeight: 600,
+              opacity: 0.6,
+              whiteSpace: "nowrap",
+            }}
+          >
+            ₸
+          </div>
+
+          {/* ⚡ квадрат */}
+          <div
+            onClick={() => setUnexpected(!unexpected)}
+            style={{
+              width: 36,
+              height: 36,
+              borderRadius: 10,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              flexShrink: 0,
+              background: unexpected
+                ? "var(--primary)"
+                : "var(--bg-secondary)",
+              color: unexpected ? "#fff" : "#000",
+              cursor: "pointer",
+            }}
+          >
+            ⚡
+          </div>
         </div>
       </div>
 
@@ -224,13 +265,17 @@ export const TransactionForm = ({ type, accounts, onSubmit }) => {
             );
           })}
 
-          {/* ADD */}
+          {/* ➕ квадрат */}
           <div
             onClick={() => setAdding(true)}
             style={{
-              padding: "10px 14px",
-              borderRadius: 14,
-              border: "1px dashed #ccc",
+              width: 36,
+              height: 36,
+              borderRadius: 10,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              border: "1px dashed var(--border)",
               cursor: "pointer",
             }}
           >
@@ -239,38 +284,85 @@ export const TransactionForm = ({ type, accounts, onSubmit }) => {
         </div>
       )}
 
+      {/* ➕ ADD CATEGORY */}
       {adding && (
-        <div style={{ display: "flex", gap: 8 }}>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            borderRadius: 16,
+            padding: "10px 12px",
+            background: "var(--card)",
+            border: "1px solid var(--border)",
+            gap: 8,
+          }}
+        >
           <input
             value={newCategory}
             onChange={(e) => setNewCategory(e.target.value)}
-            placeholder="Категория"
+            placeholder="Новая категория"
             style={{
               flex: 1,
-              padding: 10,
-              borderRadius: 10,
-              border: "1px solid var(--border)",
+              border: "none",
+              outline: "none",
+              background: "transparent",
             }}
           />
-          <button onClick={addCategory}>OK</button>
+
+          <div
+            onClick={addCategory}
+            style={{
+              width: 36,
+              height: 36,
+              borderRadius: 10,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              background: "var(--primary)",
+              color: "#fff",
+              cursor: "pointer",
+            }}
+          >
+            <Check size={16} />
+          </div>
         </div>
       )}
 
       {/* 💳 ACCOUNTS */}
-      <AccountCard
-        label="Списать с"
-        value={from}
-        setValue={setFrom}
-        accounts={accounts}
-      />
 
-      {type !== "expense" && (
+      {type === "expense" && (
+        <AccountCard
+          label="Списать с"
+          value={from}
+          setValue={setFrom}
+          accounts={accounts}
+        />
+      )}
+
+      {type === "income" && (
         <AccountCard
           label="Зачислить на"
           value={to}
           setValue={setTo}
           accounts={accounts}
         />
+      )}
+
+      {type === "transfer" && (
+        <>
+          <AccountCard
+            label="Списать с"
+            value={from}
+            setValue={setFrom}
+            accounts={accounts}
+          />
+          <AccountCard
+            label="Зачислить на"
+            value={to}
+            setValue={setTo}
+            accounts={accounts}
+          />
+        </>
       )}
     </div>
   );
@@ -291,7 +383,7 @@ const AccountCard = ({ label, value, setValue, accounts }) => {
       style={{
         padding: 16,
         borderRadius: 16,
-        background: "var(--bg)",
+        background: "var(--card)",
         border: "1px solid var(--border)",
       }}
     >
