@@ -10,7 +10,18 @@ export const ThemeProvider = ({ children }) => {
 
   return (
     <ThemeContext.Provider value={{ theme, setPrimary }}>
-      {children}
+      <div
+        style={{
+          "--primary": theme.colors.primary,
+          "--bg": theme.colors.background,        // ✅ ВОТ ФИКС
+          "--text": theme.colors.text,
+          "--text-secondary": theme.colors.secondaryText,
+          "--border": theme.colors.border,
+          "--danger": theme.colors.danger,
+        }}
+      >
+        {children}
+      </div>
     </ThemeContext.Provider>
   );
 };
@@ -23,4 +34,4 @@ export const useTheme = () => {
 export const useSetPrimary = () => {
   const context = useContext(ThemeContext);
   return context.setPrimary;
-};
+};  

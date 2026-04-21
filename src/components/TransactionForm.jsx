@@ -2,16 +2,24 @@ import { useState, useEffect } from "react";
 
 export const TransactionForm = ({ type, accounts, onSubmit }) => {
   const [amount, setAmount] = useState("");
-  const [from, setFrom] = useState("cash");
-  const [to, setTo] = useState("card");
+  const [from, setFrom] = useState("");
+  const [to, setTo] = useState("");
+
+  const [openFrom, setOpenFrom] = useState(false);
+  const [openTo, setOpenTo] = useState(false);
 
   useEffect(() => {
-    setAmount("");
-  }, [type]);
+    if (accounts.length > 0 && !from && !to) {
+      setFrom(accounts[0].id);
+      setTo(accounts[1]?.id || accounts[0].id);
+    }
+  }, [accounts]);
+
+  const getAccount = (id) =>
+    accounts.find((acc) => acc.id === id);
 
   function handleSubmit() {
     const value = Number(amount);
-
     if (!value || value <= 0) return;
 
     const tx = {
@@ -21,13 +29,8 @@ export const TransactionForm = ({ type, accounts, onSubmit }) => {
       createdAt: new Date().toISOString(),
     };
 
-    if (type === "income") {
-      tx.to = to;
-    }
-
-    if (type === "expense") {
-      tx.from = from;
-    }
+    if (type === "income") tx.to = to;
+    if (type === "expense") tx.from = from;
 
     if (type === "transfer") {
       if (from === to) return;
@@ -39,11 +42,33 @@ export const TransactionForm = ({ type, accounts, onSubmit }) => {
     setAmount("");
   }
 
+  const dropdownStyle = {
+    padding: 14,
+    borderRadius: 14,
+    border: "1px solid var(--border)",
+    cursor: "pointer",
+    background: "var(--bg)",
+  };
+
+  const listStyle = {
+    marginTop: 6,
+    borderRadius: 12,
+    border: "1px solid var(--border)",
+    overflow: "hidden",
+  };
+
+  const itemStyle = {
+    padding: 12,
+    cursor: "pointer",
+    background: "var(--bg)",
+  };
+
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
       {/* СУММА */}
       <input
-        type="number"
+        type="text"
+        inputMode="decimal"   // ✅ мобильная цифровая клавиатура
         placeholder="Сумма"
         value={amount}
         onChange={(e) => setAmount(e.target.value)}
@@ -57,40 +82,60 @@ export const TransactionForm = ({ type, accounts, onSubmit }) => {
 
       {/* FROM */}
       {type !== "income" && (
-        <select
-          value={from}
-          onChange={(e) => setFrom(e.target.value)}
-          style={{
-            padding: 14,
-            borderRadius: 14,
-            border: "1px solid var(--border)",
-          }}
-        >
-          {accounts.map((acc) => (
-            <option key={acc.id} value={acc.id}>
-              {acc.name} ({acc.balance})
-            </option>
-          ))}
-        </select>
+        <div>
+          <div
+            style={dropdownStyle}
+            onClick={() => setOpenFrom(!openFrom)}
+          >
+            {getAccount(from)?.name || "Выбрать счет"}
+          </div>
+
+          {openFrom && (
+            <div style={listStyle}>
+              {accounts.map((acc) => (
+                <div
+                  key={acc.id}
+                  style={itemStyle}
+                  onClick={() => {
+                    setFrom(acc.id);
+                    setOpenFrom(false);
+                  }}
+                >
+                  {acc.name} ({acc.balance})
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       )}
 
       {/* TO */}
       {type !== "expense" && (
-        <select
-          value={to}
-          onChange={(e) => setTo(e.target.value)}
-          style={{
-            padding: 14,
-            borderRadius: 14,
-            border: "1px solid var(--border)",
-          }}
-        >
-          {accounts.map((acc) => (
-            <option key={acc.id} value={acc.id}>
-              {acc.name} ({acc.balance})
-            </option>
-          ))}
-        </select>
+        <div>
+          <div
+            style={dropdownStyle}
+            onClick={() => setOpenTo(!openTo)}
+          >
+            {getAccount(to)?.name || "Выбрать счет"}
+          </div>
+
+          {openTo && (
+            <div style={listStyle}>
+              {accounts.map((acc) => (
+                <div
+                  key={acc.id}
+                  style={itemStyle}
+                  onClick={() => {
+                    setTo(acc.id);
+                    setOpenTo(false);
+                  }}
+                >
+                  {acc.name} ({acc.balance})
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       )}
 
       {/* BUTTON */}
@@ -101,10 +146,11 @@ export const TransactionForm = ({ type, accounts, onSubmit }) => {
           padding: 16,
           borderRadius: 16,
           border: "none",
-          background: "var(--accent)",
+          background: "var(--primary)",
           color: "#fff",
           fontSize: 16,
           fontWeight: 500,
+          cursor: "pointer",
         }}
       >
         {type === "transfer" ? "Перевести" : "Сохранить"}
