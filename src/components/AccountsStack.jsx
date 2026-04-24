@@ -26,31 +26,41 @@ export const AccountsStack = ({
 
     if (offset < -60 || velocity < -500) {
       newIndex = index + 1;
-    }
-
-    if (offset > 60 || velocity > 500) {
+    } else if (offset > 60 || velocity > 500) {
       newIndex = index - 1;
     }
 
-    newIndex = Math.max(0, Math.min(newIndex, count - 1));
+    // 🔥 циклический индекс
+    if (newIndex < 0) newIndex = count - 1;
+    if (newIndex >= count) newIndex = 0;
 
     setIndex(newIndex);
     isDragging.current = false;
+  };
+
+  // 🔥 КЛЮЧЕВОЙ ФИКС
+  const getOffset = (i) => {
+    let diff = i - index;
+
+    if (diff > count / 2) diff -= count;
+    if (diff < -count / 2) diff += count;
+
+    return diff;
   };
 
   return (
     <div
       style={{
         position: "relative",
-        height: 220, // 🔥 было 200 → добавили место под индикатор
+        height: 220,
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        overflow: "hidden", // 👈 НЕ ТРОГАЕМ (важно для drag)
+        overflow: "hidden",
       }}
     >
       {items.map((acc, i) => {
-        const offset = i - index;
+        const offset = getOffset(i);
         const isActive = offset === 0;
 
         return (
@@ -63,14 +73,13 @@ export const AccountsStack = ({
             }}
             transition={{
               type: "spring",
-              stiffness: 220,
-              damping: 22,
-              mass: 0.8,
+              stiffness: 260,
+              damping: 24,
+              mass: 0.7,
             }}
             drag="x"
-            dragElastic={0.25}
-            dragMomentum={true}
-            dragSnapToOrigin
+            dragElastic={0.18}
+            dragMomentum={false}
             onDragStart={handleDragStart}
             onDragEnd={handleDragEnd}
             style={{
@@ -96,11 +105,11 @@ export const AccountsStack = ({
         );
       })}
 
-      {/* индикатор */}
+      {/* ===== ИНДИКАТОР ===== */}
       <div
         style={{
           position: "absolute",
-          bottom: 10, // 🔥 было 0 → из-за этого резался
+          bottom: 10,
           display: "flex",
           gap: 6,
         }}

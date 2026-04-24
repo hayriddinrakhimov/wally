@@ -1,4 +1,5 @@
 import { formatMoney } from "../utils/formatMoney";
+import { Wallet, CreditCard, Landmark } from "lucide-react";
 
 const gradients = {
   blue: "linear-gradient(135deg, #3b82f6 0%, #1e3a8a 100%)",
@@ -13,6 +14,43 @@ export const AccountCard = ({ account, isActive }) => {
 
   const balance = account.balance ?? 0;
   const currency = account.currency || "KZT";
+
+  // ===== ИКОНКА СЛЕВА =====
+  const getIcon = () => {
+    switch (account.type) {
+      case "cash":
+        return <Wallet size={18} />;
+      case "deposit":
+        return <Landmark size={18} />;
+      default:
+        return <CreditCard size={18} />;
+    }
+  };
+
+  // ===== ЭЛЕМЕНТ СПРАВА =====
+  const getRightElement = () => {
+    if (account.type === "deposit") {
+      return (
+        <div style={{ fontSize: 16, opacity: 0.8 }}>
+          🔒
+        </div>
+      );
+    }
+
+    if (account.type === "cash") {
+      return (
+        <div style={{ fontSize: 16, opacity: 0.8 }}>
+          💵
+        </div>
+      );
+    }
+
+    return (
+      <div style={{ fontSize: 12, opacity: 0.7 }}>
+        **** 1234
+      </div>
+    );
+  };
 
   return (
     <div
@@ -42,10 +80,20 @@ export const AccountCard = ({ account, isActive }) => {
           alignItems: "center",
         }}
       >
-        <div style={{ opacity: 0.85 }}>
-          {account.name || "Счет"}
+        {/* ЛЕВАЯ ЧАСТЬ */}
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 8,
+            opacity: 0.9,
+          }}
+        >
+          {getIcon()}
+          <span>{account.name || "Счет"}</span>
         </div>
 
+        {/* ВАЛЮТА */}
         <div
           style={{
             fontSize: 14,
@@ -56,7 +104,7 @@ export const AccountCard = ({ account, isActive }) => {
         </div>
       </div>
 
-      {/* ===== БАЛАНС */}
+      {/* ===== БАЛАНС ===== */}
       <div
         style={{
           fontSize: 28,
@@ -66,14 +114,15 @@ export const AccountCard = ({ account, isActive }) => {
         {formatMoney(balance, currency)}
       </div>
 
-      {/* ===== НИЗ */}
+      {/* ===== НИЗ ===== */}
       <div
         style={{
-          fontSize: 12,
-          opacity: 0.7,
+          display: "flex",
+          justifyContent: "flex-end",
+          alignItems: "center",
         }}
       >
-        **** 1234
+        {getRightElement()}
       </div>
     </div>
   );

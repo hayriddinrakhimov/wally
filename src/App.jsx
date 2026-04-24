@@ -12,7 +12,6 @@ import { NotificationsContent } from "./components/NotificationsContent";
 import { TransactionContent } from "./components/TransactionContent";
 import { AccountFormContent } from "./components/AccountFormContent";
 import { AccountColorPickerContent } from "./components/AccountColorPickerContent";
-import { ColorPickerContent } from "./components/ColorPickerContent";
 
 import { useSetPrimary } from "./theme/ThemeProvider";
 import { CurrencyProvider } from "./context/CurrencyProvider";
@@ -39,6 +38,55 @@ export default function App() {
   const [editingAccount, setEditingAccount] = useState(null);
   const [accountColor, setAccountColor] = useState("blue");
 
+  /* ===================== ДЕФОЛТНЫЕ СЧЕТА ===================== */
+
+  useEffect(() => {
+    if (!accountsRaw || accountsRaw.length === 0) {
+      const defaults = [
+        {
+          id: "cash",
+          name: "Наличные",
+          balance: 0,
+          currency: "KZT",
+          color: "green",
+          type: "cash",
+        },
+        {
+          id: "card-1",
+          name: "Счет №1",
+          balance: 0,
+          currency: "KZT",
+          color: "blue",
+          type: "card",
+        },
+        {
+          id: "deposit",
+          name: "Депозит",
+          balance: 0,
+          currency: "KZT",
+          color: "purple",
+          type: "deposit",
+        },
+      ];
+
+      setAccounts(defaults);
+    }
+  }, [accountsRaw, setAccounts]);
+
+  /* ===================== ФИКС ИНДЕКСА ===================== */
+
+  useEffect(() => {
+    const itemsLength = (accountsRaw?.length || 0) + 1;
+
+    if (activeIndex >= itemsLength) {
+      setActiveIndex(itemsLength - 1);
+    }
+
+    if (activeIndex < 0) {
+      setActiveIndex(0);
+    }
+  }, [accountsRaw, activeIndex, setActiveIndex]);
+
   /* ===================== НОРМАЛИЗАЦИЯ ===================== */
 
   const normalizeCurrency = (cur) => {
@@ -50,11 +98,22 @@ export default function App() {
     return cur;
   };
 
+  /* ===================== СОРТИРОВКА ===================== */
+
+  const typeOrder = {
+    cash: 0,
+    card: 1,
+    deposit: 2,
+  };
+
   const accounts = Array.isArray(accountsRaw)
-    ? accountsRaw.map((acc) => ({
-        ...acc,
-        currency: normalizeCurrency(acc.currency),
-      }))
+    ? accountsRaw
+        .map((acc) => ({
+          ...acc,
+          currency: normalizeCurrency(acc.currency),
+          type: acc.type || "card",
+        }))
+        .sort((a, b) => typeOrder[a.type] - typeOrder[b.type])
     : [];
 
   /* ===================== ТРАНЗАКЦИИ ===================== */
@@ -98,6 +157,7 @@ export default function App() {
               ...acc,
               ...data,
               currency: normalizeCurrency(data.currency),
+              type: data.type || acc.type || "card",
             }
           : acc
       )
@@ -115,6 +175,7 @@ export default function App() {
         balance: 0,
         currency: normalizeCurrency(data.currency),
         ...data,
+        type: data.type || "card",
         color: accountColor,
       },
     ]);
