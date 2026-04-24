@@ -17,6 +17,7 @@ export const ThemeProvider = ({ children }) => {
     <ThemeContext.Provider value={{ theme, setPrimary }}>
       <div
         style={{
+          /* ===== CSS VARIABLES ===== */
           "--primary": theme.colors.primary || "#3b82f6",
           "--bg": theme.colors.background || "#ffffff",
           "--text": theme.colors.text || "#111111",
@@ -25,8 +26,12 @@ export const ThemeProvider = ({ children }) => {
           "--border": theme.colors.border || "#e5e7eb",
           "--danger": theme.colors.danger || "#ef4444",
 
+          /* ===== BASE STYLES ===== */
           background: "var(--bg)",
           color: "var(--text)",
+
+          /* 🔥 ВАЖНО: фикс шрифта */
+          fontFamily: "var(--font-main)",
 
           minHeight: "100vh",
         }}
