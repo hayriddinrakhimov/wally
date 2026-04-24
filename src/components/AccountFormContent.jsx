@@ -1,56 +1,100 @@
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
 import { useTheme } from "../theme/ThemeProvider";
 
 export const AccountFormContent = ({
   account,
   color,
+  usedColors,
   onOpenColorPicker,
   onSave,
+  onChange,
 }) => {
   const theme = useTheme();
 
-  const [name, setName] = useState(account?.name || "");
-  const [currency, setCurrency] = useState(
-    account?.currency || "KZT"
-  );
+  const name = account?.name || "";
+  const currency = account?.currency || "KZT";
+  const type = account?.type || "card";
 
   /* ================= SUBMIT ================= */
 
   const handleSubmit = () => {
     if (!name.trim()) return;
 
-    if (typeof onSave !== "function") {
-      console.warn("onSave не передан");
-      return;
-    }
-
     onSave({
-      name,
-      currency,
+      ...account,
+      color,
     });
   };
 
-  // 💥 СЛУШАЕМ кнопку снизу (footer)
   useEffect(() => {
     const handler = () => handleSubmit();
 
     document.addEventListener("submitAccount", handler);
-
     return () =>
       document.removeEventListener("submitAccount", handler);
-  }, [name, currency, onSave]);
+  }, [account, color]);
 
   /* ================= UI ================= */
 
   return (
     <div>
-      {/* ===== ПРЕВЬЮ ===== */}
+      {/* ===== ПРЕВЬЮ + ТИП ===== */}
       <div style={{ padding: 16 }}>
         <PreviewCard
           name={name || "Название счета"}
           currency={currency}
           color={color}
+          type={type}
         />
+
+        {/* 🔥 тип рядом с картой */}
+        <div
+          style={{
+            display: "flex",
+            gap: 8,
+            marginTop: 12,
+          }}
+        >
+          {[
+            { id: "cash", label: "💵" },
+            { id: "card", label: "💳" },
+            { id: "deposit", label: "🏦" },
+          ].map((t) => {
+            const active = type === t.id;
+
+            return (
+              <div
+                key={t.id}
+                onClick={() =>
+                  onChange({ ...account, type: t.id })
+                }
+                style={{
+                  flex: 1,
+                  height: 48,
+                  borderRadius: 12,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontSize: 20,
+
+                  background: active
+                    ? "var(--primary)"
+                    : "transparent",
+
+                  color: active ? "white" : "#888",
+
+                  border: active
+                    ? "none"
+                    : `1px solid ${theme.colors.border}`,
+
+                  cursor: "pointer",
+                }}
+              >
+                {t.label}
+              </div>
+            );
+          })}
+        </div>
       </div>
 
       {/* ===== НАЗВАНИЕ ===== */}
@@ -60,7 +104,12 @@ export const AccountFormContent = ({
         <div style={{ padding: 16 }}>
           <input
             value={name}
-            onChange={(e) => setName(e.target.value)}
+            onChange={(e) =>
+              onChange({
+                ...account,
+                name: e.target.value,
+              })
+            }
             placeholder="Название счета"
             style={{
               width: "100%",
@@ -83,7 +132,12 @@ export const AccountFormContent = ({
           right={
             <select
               value={currency}
-              onChange={(e) => setCurrency(e.target.value)}
+              onChange={(e) =>
+                onChange({
+                  ...account,
+                  currency: e.target.value,
+                })
+              }
               style={{
                 border: "none",
                 background: "transparent",
@@ -121,15 +175,21 @@ const gradients = {
   purple: "linear-gradient(135deg, #a855f7, #1e293b)",
   orange: "linear-gradient(135deg, #f97316, #1e293b)",
   red: "linear-gradient(135deg, #ef4444, #1e293b)",
+  pink: "linear-gradient(135deg, #ec4899, #1e293b)",
+  cyan: "linear-gradient(135deg, #06b6d4, #1e293b)",
+  yellow: "linear-gradient(135deg, #eab308, #1e293b)",
+  indigo: "linear-gradient(135deg, #6366f1, #1e293b)",
+  teal: "linear-gradient(135deg, #14b8a6, #1e293b)",
 };
 
-const PreviewCard = ({ name, currency, color }) => {
+const PreviewCard = ({ name, currency, color, type }) => {
   const bg = gradients[color] || gradients.blue;
 
   return (
     <div
       style={{
-        height: 160,
+        width: "100%",
+        aspectRatio: "1.6 / 1", // 🔥 фикс пропорции
         borderRadius: 20,
         padding: 18,
         background: bg,
@@ -156,7 +216,7 @@ const PreviewCard = ({ name, currency, color }) => {
       </div>
 
       <div style={{ fontSize: 12, opacity: 0.7 }}>
-        **** 1234
+        {type === "card" ? "**** 1234" : type === "deposit" ? "Ставка 10%" : "Наличные"}
       </div>
     </div>
   );
@@ -248,6 +308,11 @@ function getColorPreview(color) {
     purple: "#a855f7",
     orange: "#f97316",
     red: "#ef4444",
+    pink: "#ec4899",
+    cyan: "#06b6d4",
+    yellow: "#eab308",
+    indigo: "#6366f1",
+    teal: "#14b8a6",
   };
 
   return map[color] || map.blue;

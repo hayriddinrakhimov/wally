@@ -5,6 +5,7 @@ export const MainContent = ({
   activeIndex,
   setActiveIndex,
   onAdd,
+  onEdit, // 🔥 добавили
 }) => {
   return (
     <div
@@ -12,16 +13,17 @@ export const MainContent = ({
         flex: 1,
         display: "flex",
         flexDirection: "column",
-        overflow: "hidden", // ✅ ГЛАВНЫЙ ФИКС
+        overflow: "hidden",
       }}
     >
       <div
         style={{
           position: "relative",
-          flex: 1, // ✅ чтобы занял всё доступное
+          flex: 1,
           display: "flex",
-          alignItems: "center", // можно убрать если не хочешь центр
+          alignItems: "flex-start", // 🔥 фикс пустоты
           justifyContent: "center",
+          paddingTop: 0, // 🔥 аккуратный отступ
         }}
       >
         <div
@@ -35,6 +37,7 @@ export const MainContent = ({
             index={activeIndex}
             setIndex={setActiveIndex}
             onAdd={onAdd}
+            onEdit={onEdit} // 🔥 теперь дойдёт до карточки
           />
         </div>
       </div>

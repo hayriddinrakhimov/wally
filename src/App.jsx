@@ -38,6 +38,28 @@ export default function App() {
   const [editingAccount, setEditingAccount] = useState(null);
   const [accountColor, setAccountColor] = useState("blue");
 
+  // 🔥 главное — draft формы
+  const [accountDraft, setAccountDraft] = useState(null);
+
+  /* ===================== COLORS ===================== */
+
+  const ALL_COLORS = [
+    "blue",
+    "green",
+    "purple",
+    "orange",
+    "red",
+    "pink",
+    "cyan",
+    "yellow",
+    "indigo",
+    "teal",
+  ];
+
+  const getFreeColor = (used) => {
+    return ALL_COLORS.find((c) => !used.includes(c)) || "blue";
+  };
+
   /* ===================== ДЕФОЛТНЫЕ СЧЕТА ===================== */
 
   useEffect(() => {
@@ -165,6 +187,7 @@ export default function App() {
 
     setSheetType(null);
     setEditingAccount(null);
+    setAccountDraft(null);
   }
 
   function handleCreateAccount(data) {
@@ -176,11 +199,12 @@ export default function App() {
         currency: normalizeCurrency(data.currency),
         ...data,
         type: data.type || "card",
-        color: accountColor,
+        color: data.color || accountColor,
       },
     ]);
 
     setSheetType(null);
+    setAccountDraft(null);
   }
 
   /* ===================== FOOTER ===================== */
@@ -229,7 +253,7 @@ export default function App() {
           disabled={!!sheetType}
         />
 
-        <div style={{ paddingTop: 80 }}>
+        <div style={{ paddingTop: 8 }}>
           <TotalBalance
             accounts={accounts}
             baseCurrency={baseCurrency}
@@ -240,12 +264,29 @@ export default function App() {
             activeIndex={activeIndex}
             setActiveIndex={setActiveIndex}
             onAdd={() => {
+              const used = accountsRaw
+                .map((a) => a.color)
+                .filter(Boolean);
+
+              const color = getFreeColor(used);
+
               setEditingAccount(null);
-              setAccountColor("blue");
+
+              setAccountDraft({
+                name: "",
+                currency: "KZT",
+                type: "card",
+                color,
+              });
+
+              setAccountColor(color);
               setSheetType("account");
             }}
             onEdit={(acc) => {
               setEditingAccount(acc);
+
+              setAccountDraft({ ...acc });
+
               setAccountColor(acc.color || "blue");
               setSheetType("account");
             }}
@@ -263,9 +304,16 @@ export default function App() {
           onClose={() => {
             setSheetType(null);
             setEditingAccount(null);
+            setAccountDraft(null);
             setSettingsView("main");
           }}
-          title=""
+          title={
+            sheetType === "account"
+              ? editingAccount
+                ? "Редактировать счет"
+                : "Новый счет"
+              : ""
+          }
           footer={renderFooter()}
         >
           {sheetType === "settings" && (
@@ -287,8 +335,15 @@ export default function App() {
 
           {sheetType === "account" && (
             <AccountFormContent
-              account={editingAccount}
+              account={accountDraft}
               color={accountColor}
+              usedColors={
+                accountsRaw
+                  .filter((a) => a.id !== editingAccount?.id)
+                  .map((a) => a.color)
+                  .filter(Boolean)
+              }
+              onChange={setAccountDraft}
               onOpenColorPicker={() =>
                 setSheetType("accountColor")
               }
@@ -305,8 +360,21 @@ export default function App() {
           {sheetType === "accountColor" && (
             <AccountColorPickerContent
               value={accountColor}
+              usedColors={
+                accountsRaw
+                  .filter((a) => a.id !== editingAccount?.id)
+                  .map((a) => a.color)
+                  .filter(Boolean)
+              }
               onChange={(c) => {
                 setAccountColor(c);
+
+                // 🔥 синхронизация с draft
+                setAccountDraft((prev) => ({
+                  ...prev,
+                  color: c,
+                }));
+
                 setSheetType("account");
               }}
             />

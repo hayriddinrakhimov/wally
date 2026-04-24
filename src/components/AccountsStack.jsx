@@ -8,6 +8,7 @@ export const AccountsStack = ({
   index = 0,
   setIndex,
   onAdd,
+  onEdit, // 🔥 ДОБАВИЛИ
 }) => {
   const isDragging = useRef(false);
 
@@ -30,7 +31,6 @@ export const AccountsStack = ({
       newIndex = index - 1;
     }
 
-    // 🔥 циклический индекс
     if (newIndex < 0) newIndex = count - 1;
     if (newIndex >= count) newIndex = 0;
 
@@ -38,7 +38,6 @@ export const AccountsStack = ({
     isDragging.current = false;
   };
 
-  // 🔥 КЛЮЧЕВОЙ ФИКС
   const getOffset = (i) => {
     let diff = i - index;
 
@@ -99,6 +98,11 @@ export const AccountsStack = ({
               <AccountCard
                 account={acc}
                 isActive={isActive}
+                onEdit={(account) => {
+                  if (!isDragging.current && onEdit) {
+                    onEdit(account);
+                  }
+                }}
               />
             )}
           </motion.div>
