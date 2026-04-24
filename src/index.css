@@ -5,7 +5,23 @@
   padding: 0;
 }
 
-/* ===== ROOT VARIABLES (оставляем твои) ===== */
+/* ===== ГЛАВНЫЙ ФИКС ШРИФТА ===== */
+html,
+body,
+#root {
+  font-family:
+    "Inter",
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    Roboto,
+    "Noto Sans",
+    "Segoe UI Symbol",
+    Arial,
+    sans-serif !important;
+}
+
+/* ===== ROOT ===== */
 :root {
   --text: #6b6375;
   --text-h: #08060d;
@@ -13,7 +29,6 @@
   --border: #e5e4e7;
   --accent: #aa3bff;
 
-  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   color: var(--text);
   background: var(--bg);
 
@@ -21,59 +36,52 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* ===== BODY ===== */
 body {
   margin: 0;
-  background: #f5f6f8; /* светлый фон как раньше */
+  background: #f5f6f8;
   color: var(--text-h);
 }
 
-/* ===== ROOT APP CONTAINER ===== */
+/* ===== ROOT APP ===== */
 #root {
   width: 100%;
   min-height: 100vh;
-
   display: flex;
   flex-direction: column;
-
-  /* ❗ УБРАЛИ ВСЁ ЛИШНЕЕ */
-  margin: 0;
-  border: none;
-  text-align: left;
 }
 
-/* ===== СКРЫТИЕ СКРОЛЛА ГЛОБАЛЬНО ===== */
-
-/* Chrome / Safari */
+/* ===== SCROLL HIDE ===== */
 ::-webkit-scrollbar {
   display: none;
 }
 
-/* Firefox */
 * {
   scrollbar-width: none;
-}
-
-/* IE / Edge */
-* {
   -ms-overflow-style: none;
 }
 
-/* ===== MOBILE FEEL ===== */
+/* ===== MOBILE ===== */
 html,
 body {
   overscroll-behavior: none;
-  /* ===== FIX TAP HIGHLIGHT ===== */
+}
+
+/* ===== TAP FIX ===== */
 * {
   -webkit-tap-highlight-color: transparent;
 }
 
+/* ===== BUTTONS ===== */
 button {
   outline: none;
+  border: none;
+  background: none;
+  font-family: inherit;
+  cursor: pointer;
 }
 
-/* Небольшой нормальный фидбек */
 button:active {
   opacity: 0.7;
   transform: scale(0.96);
-}
 }

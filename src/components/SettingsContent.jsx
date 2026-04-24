@@ -4,9 +4,14 @@ import {
   Download,
   Upload,
   Trash2,
+  DollarSign,
 } from "lucide-react";
 
-export const SettingsContent = ({ onOpenColorPicker }) => {
+export const SettingsContent = ({
+  onOpenColorPicker,
+  baseCurrency,
+  onChangeCurrency,
+}) => {
   const theme = useTheme();
   const primary = theme.colors.primary;
 
@@ -22,6 +27,23 @@ export const SettingsContent = ({ onOpenColorPicker }) => {
           subtitle="Меняет цвет приложения"
           right={<ColorDot color={primary} />}
           onClick={onOpenColorPicker}
+        />
+      </Block>
+
+      {/* ===== ВАЛЮТА ===== */}
+      <SectionTitle>Валюта</SectionTitle>
+
+      <Block>
+        <Row
+          icon={<DollarSign size={18} />}
+          title="Основная валюта"
+          subtitle="Используется для общего баланса"
+          right={
+            <CurrencySelect
+              value={baseCurrency}
+              onChange={onChangeCurrency}
+            />
+          }
         />
       </Block>
 
@@ -170,18 +192,6 @@ const Row = ({ icon, title, subtitle, right, onClick, danger }) => {
         transition: "all 0.15s ease",
         WebkitTapHighlightColor: "transparent",
       }}
-      onMouseDown={(e) => {
-        e.currentTarget.style.transform = "scale(0.97)";
-        e.currentTarget.style.opacity = "0.7";
-      }}
-      onMouseUp={(e) => {
-        e.currentTarget.style.transform = "scale(1)";
-        e.currentTarget.style.opacity = "1";
-      }}
-      onMouseLeave={(e) => {
-        e.currentTarget.style.transform = "scale(1)";
-        e.currentTarget.style.opacity = "1";
-      }}
     >
       {/* LEFT */}
       <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
@@ -262,3 +272,32 @@ const ColorDot = ({ color }) => (
     }}
   />
 );
+
+/* 🆕 DROPDOWN ВАЛЮТЫ */
+const CurrencySelect = ({ value, onChange }) => {
+  const theme = useTheme();
+  const currencies = ["KZT", "USD", "EUR", "RUB"];
+
+  return (
+    <select
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      style={{
+        padding: "6px 10px",
+        borderRadius: 8,
+        border: `1px solid ${theme.colors.border}`,
+        background: theme.colors.background,
+        fontSize: 13,
+        fontWeight: 600,
+        cursor: "pointer",
+        outline: "none",
+      }}
+    >
+      {currencies.map((cur) => (
+        <option key={cur} value={cur}>
+          {cur}
+        </option>
+      ))}
+    </select>
+  );
+};

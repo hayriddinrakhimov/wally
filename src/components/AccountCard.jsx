@@ -1,3 +1,5 @@
+import { formatMoney } from "../utils/formatMoney";
+
 const gradients = {
   blue: "linear-gradient(135deg, #3b82f6 0%, #1e3a8a 100%)",
   green: "linear-gradient(135deg, #22c55e 0%, #14532d 100%)",
@@ -7,8 +9,10 @@ const gradients = {
 };
 
 export const AccountCard = ({ account, isActive }) => {
-  const gradient =
-    gradients[account.color] || gradients.blue;
+  const gradient = gradients[account.color] || gradients.blue;
+
+  const balance = account.balance ?? 0;
+  const currency = account.currency || "KZT";
 
   return (
     <div
@@ -48,29 +52,21 @@ export const AccountCard = ({ account, isActive }) => {
             opacity: 0.8,
           }}
         >
-          {account.currency || "₸"}
+          {currency}
         </div>
       </div>
 
-      {/* ===== БАЛАНС ===== */}
+      {/* ===== БАЛАНС */}
       <div
         style={{
           fontSize: 28,
           fontWeight: 700,
         }}
       >
-        {account.balance ?? 0}{" "}
-        <span
-          style={{
-            fontSize: 16,
-            opacity: 0.85,
-          }}
-        >
-          {account.currency || "₸"}
-        </span>
+        {formatMoney(balance, currency)}
       </div>
 
-      {/* ===== НИЗ ===== */}
+      {/* ===== НИЗ */}
       <div
         style={{
           fontSize: 12,

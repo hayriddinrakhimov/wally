@@ -5,6 +5,7 @@ import { Header } from "./components/Header";
 import { MainContent } from "./components/MainContent";
 import { Navbar } from "./components/Navbar";
 import { BottomSheet } from "./components/BottomSheet";
+import { TotalBalance } from "./components/TotalBalance";
 
 import { SettingsContent } from "./components/SettingsContent";
 import { NotificationsContent } from "./components/NotificationsContent";
@@ -14,6 +15,7 @@ import { AccountColorPickerContent } from "./components/AccountColorPickerConten
 import { ColorPickerContent } from "./components/ColorPickerContent";
 
 import { useSetPrimary } from "./theme/ThemeProvider";
+import { CurrencyProvider } from "./context/CurrencyProvider";
 
 export default function App() {
   const [activeTab, setActiveTab] = useState("wallet");
@@ -28,12 +30,32 @@ export default function App() {
 
   const [settingsView, setSettingsView] = useState("main");
 
-  const [accounts, setAccounts] = useLocalStorage("accounts", []);
+  const [baseCurrency, setBaseCurrency] = useLocalStorage("baseCurrency", "KZT");
+
+  const [accountsRaw, setAccounts] = useLocalStorage("accounts", []);
   const [transactions, setTransactions] = useLocalStorage("transactions", []);
   const [activeIndex, setActiveIndex] = useLocalStorage("activeIndex", 0);
 
   const [editingAccount, setEditingAccount] = useState(null);
   const [accountColor, setAccountColor] = useState("blue");
+
+  /* ===================== НОРМАЛИЗАЦИЯ ===================== */
+
+  const normalizeCurrency = (cur) => {
+    if (!cur) return "KZT";
+    if (cur === "₸") return "KZT";
+    if (cur === "$") return "USD";
+    if (cur === "€") return "EUR";
+    if (cur === "₽") return "RUB";
+    return cur;
+  };
+
+  const accounts = Array.isArray(accountsRaw)
+    ? accountsRaw.map((acc) => ({
+        ...acc,
+        currency: normalizeCurrency(acc.currency),
+      }))
+    : [];
 
   /* ===================== ТРАНЗАКЦИИ ===================== */
 
@@ -71,7 +93,13 @@ export default function App() {
   function handleSaveAccount(data) {
     setAccounts((prev) =>
       prev.map((acc) =>
-        acc.id === data.id ? { ...acc, ...data } : acc
+        acc.id === data.id
+          ? {
+              ...acc,
+              ...data,
+              currency: normalizeCurrency(data.currency),
+            }
+          : acc
       )
     );
 
@@ -85,6 +113,7 @@ export default function App() {
       {
         id: Date.now().toString(),
         balance: 0,
+        currency: normalizeCurrency(data.currency),
         ...data,
         color: accountColor,
       },
@@ -128,140 +157,104 @@ export default function App() {
   /* ===================== UI ===================== */
 
   return (
-    <div style={{ position: "relative", minHeight: "100vh" }}>
-      <Header
-        onOpenSettings={() => {
-          setSheetType("settings");
-          setSettingsView("main");
-        }}
-        onOpenNotifications={() => setSheetType("notifications")}
-        disabled={!!sheetType}
-      />
-
-      <div style={{ paddingTop: 80 }}>
-        <MainContent
-          accounts={accounts}
-          activeIndex={activeIndex}
-          setActiveIndex={setActiveIndex}
-          onAdd={() => {
-            setEditingAccount(null);
-            setAccountColor("blue");
-            setSheetType("account");
+    <CurrencyProvider baseCurrency={baseCurrency}>
+      <div style={{ position: "relative", minHeight: "100vh" }}>
+        <Header
+          onOpenSettings={() => {
+            setSheetType("settings");
+            setSettingsView("main");
           }}
-          onEdit={(acc) => {
-            setEditingAccount(acc);
-            setAccountColor(acc.color || "blue");
-            setSheetType("account");
-          }}
+          onOpenNotifications={() => setSheetType("notifications")}
+          disabled={!!sheetType}
         />
 
-        <Navbar
-          activeTab={activeTab}
-          setActiveTab={setActiveTab}
-          onOpenSheet={(type) => setSheetType(type)}
-        />
-      </div>
-
-      <BottomSheet
-        open={!!sheetType}
-        onClose={() => {
-          setSheetType(null);
-          setEditingAccount(null);
-          setSettingsView("main");
-        }}
-        title={
-          sheetType === "settings"
-            ? settingsView === "main"
-              ? "Настройки"
-              : "Цвет приложения"
-            : sheetType === "notifications"
-            ? "Уведомления"
-            : sheetType === "add"
-            ? "Транзакция"
-            : sheetType === "account"
-            ? editingAccount
-              ? "Редактировать счет"
-              : "Добавить счет"
-            : sheetType === "accountColor"
-            ? "Цвет счета"
-            : ""
-        }
-        footer={renderFooter()}
-      >
-        {/* SETTINGS */}
-        {sheetType === "settings" && (
-          <>
-            {settingsView === "main" && (
-              <SettingsContent
-                onOpenColorPicker={() => setSettingsView("color")}
-              />
-            )}
-
-            {settingsView === "color" && (
-              <div>
-                <div
-                  onClick={() => setSettingsView("main")}
-                  style={{
-                    padding: 16,
-                    borderBottom: "1px solid #eee",
-                    fontWeight: 600,
-                    cursor: "pointer",
-                  }}
-                >
-                  ← Назад
-                </div>
-
-                <ColorPickerContent
-                  value={primaryKey}
-                  onChange={(color) => {
-                    setPrimaryKey(color);
-                    setPrimary(color);
-                  }}
-                />
-              </div>
-            )}
-          </>
-        )}
-
-        {sheetType === "notifications" && <NotificationsContent />}
-
-        {sheetType === "add" && (
-          <TransactionContent
+        <div style={{ paddingTop: 80 }}>
+          <TotalBalance
             accounts={accounts}
-            onSubmit={addTransaction}
+            baseCurrency={baseCurrency}
           />
-        )}
 
-        {sheetType === "account" && (
-          <AccountFormContent
-            account={editingAccount}
-            color={accountColor}
-            onOpenColorPicker={() => setSheetType("accountColor")}
-            onSave={(data) => {
-              if (editingAccount) {
-                handleSaveAccount(data);
-              } else {
-                handleCreateAccount(data);
-              }
+          <MainContent
+            accounts={accounts}
+            activeIndex={activeIndex}
+            setActiveIndex={setActiveIndex}
+            onAdd={() => {
+              setEditingAccount(null);
+              setAccountColor("blue");
+              setSheetType("account");
             }}
-          />
-        )}
-
-        {sheetType === "accountColor" && (
-          <AccountColorPickerContent
-            value={accountColor}
-            onChange={(c) => {
-              setAccountColor(c);
+            onEdit={(acc) => {
+              setEditingAccount(acc);
+              setAccountColor(acc.color || "blue");
               setSheetType("account");
             }}
           />
-        )}
-      </BottomSheet>
-    </div>
+
+          <Navbar
+            activeTab={activeTab}
+            setActiveTab={setActiveTab}
+            onOpenSheet={(type) => setSheetType(type)}
+          />
+        </div>
+
+        <BottomSheet
+          open={!!sheetType}
+          onClose={() => {
+            setSheetType(null);
+            setEditingAccount(null);
+            setSettingsView("main");
+          }}
+          title=""
+          footer={renderFooter()}
+        >
+          {sheetType === "settings" && (
+            <SettingsContent
+              baseCurrency={baseCurrency}
+              onChangeCurrency={setBaseCurrency}
+              onOpenColorPicker={() => setSettingsView("color")}
+            />
+          )}
+
+          {sheetType === "notifications" && <NotificationsContent />}
+
+          {sheetType === "add" && (
+            <TransactionContent
+              accounts={accounts}
+              onSubmit={addTransaction}
+            />
+          )}
+
+          {sheetType === "account" && (
+            <AccountFormContent
+              account={editingAccount}
+              color={accountColor}
+              onOpenColorPicker={() =>
+                setSheetType("accountColor")
+              }
+              onSave={(data) => {
+                if (editingAccount) {
+                  handleSaveAccount(data);
+                } else {
+                  handleCreateAccount(data);
+                }
+              }}
+            />
+          )}
+
+          {sheetType === "accountColor" && (
+            <AccountColorPickerContent
+              value={accountColor}
+              onChange={(c) => {
+                setAccountColor(c);
+                setSheetType("account");
+              }}
+            />
+          )}
+        </BottomSheet>
+      </div>
+    </CurrencyProvider>
   );
 }
-
-/* ===================== STYLES ===================== */
 
 const btnStyle = {
   width: "100%",
