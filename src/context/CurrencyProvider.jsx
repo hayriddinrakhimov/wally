@@ -1,31 +1,44 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import { fetchRates } from "../services/currencyService";
 
-const CurrencyContext = createContext();
+const CurrencyContext = createContext(null);
 
-export const CurrencyProvider = ({ baseCurrency, children }) => {
+export const CurrencyProvider = ({
+  baseCurrency = "KZT",
+  children,
+}) => {
   const [rates, setRates] = useState({});
   const [loading, setLoading] = useState(false);
 
+  /* ===== ЗАГРУЗКА КУРСОВ ===== */
   useEffect(() => {
     let isMounted = true;
 
     const loadRates = async () => {
+      setLoading(true);
+
       try {
         const data = await fetchRates(baseCurrency);
 
         if (!isMounted) return;
 
-        if (data) {
+        if (data && Object.keys(data).length) {
           setRates(data);
-          localStorage.setItem("rates", JSON.stringify(data));
+          localStorage.setItem(
+            "rates",
+            JSON.stringify(data)
+          );
         } else {
           const cached = localStorage.getItem("rates");
           setRates(cached ? JSON.parse(cached) : {});
         }
       } catch (e) {
         console.error("Currency error:", e);
-        setRates({});
+
+        const cached = localStorage.getItem("rates");
+        setRates(cached ? JSON.parse(cached) : {});
+      } finally {
+        if (isMounted) setLoading(false);
       }
     };
 
@@ -36,32 +49,55 @@ export const CurrencyProvider = ({ baseCurrency, children }) => {
     };
   }, [baseCurrency]);
 
+  /* ===== КОНВЕРТАЦИЯ ===== */
   const convert = (amount, from, to) => {
     if (!amount) return 0;
+    if (from === to) return amount;
 
+    // если курсы не загружены
     if (!rates[from] || !rates[to]) {
-      return amount; // fallback без краша
+      return amount;
     }
 
+    // перевод в базовую валюту
     const amountInBase =
       from === baseCurrency ? amount : amount / rates[from];
 
+    // из базовой в нужную
     const result =
       to === baseCurrency
         ? amountInBase
         : amountInBase * rates[to];
 
-    // 🔥 защита от NaN
     if (isNaN(result)) return amount;
 
     return result;
   };
 
+  /* ===== VALUE ===== */
+  const value = {
+    rates,
+    convert,
+    loading,
+    baseCurrency, // 🔥 теперь доступна везде
+  };
+
   return (
-    <CurrencyContext.Provider value={{ rates, convert, loading }}>
+    <CurrencyContext.Provider value={value}>
       {children}
     </CurrencyContext.Provider>
   );
 };
 
-export const useCurrency = () => useContext(CurrencyContext);
+/* ===== HOOK ===== */
+export const useCurrency = () => {
+  const context = useContext(CurrencyContext);
+
+  if (!context) {
+    throw new Error(
+      "useCurrency must be used within CurrencyProvider"
+    );
+  }
+
+  return context;
+};
