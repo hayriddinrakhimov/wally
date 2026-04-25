@@ -3,101 +3,225 @@ import { fetchRates } from "../services/currencyService";
 
 const CurrencyContext = createContext(null);
 
+/* ===================== НОРМАЛИЗАЦИЯ ===================== */
+const normalizeRates = (data) => {
+  if (!data) return {};
+
+  const flat = {};
+
+  Object.entries(data).forEach(([key, value]) => {
+    if (typeof value === "number") {
+      flat[key] = value;
+    }
+
+    if (typeof value === "object" && value !== null) {
+      Object.entries(value).forEach(([k, v]) => {
+        if (typeof v === "number") {
+          flat[k] = v;
+        }
+      });
+    }
+  });
+
+  return flat;
+};
+
 export const CurrencyProvider = ({
   baseCurrency = "KZT",
   children,
 }) => {
   const [rates, setRates] = useState({});
+  const [prevRates, setPrevRates] = useState({});
   const [loading, setLoading] = useState(false);
+  const [lastUpdated, setLastUpdated] = useState(null);
 
-  /* ===== ЗАГРУЗКА КУРСОВ ===== */
+  const [watchlist, setWatchlist] = useState([
+    "USD",
+    "EUR",
+    "RUB",
+  ]);
+
+  /* ✅ INTERNAL BASE CURRENCY (FIX ШАГ 1) */
+  const [internalBaseCurrency, setInternalBaseCurrency] =
+    useState(baseCurrency);
+
+  const STORAGE_KEY = "rates_v2";
+  const WATCHLIST_KEY = "currency_watchlist";
+
+  /* ===================== SYNC PROP ===================== */
   useEffect(() => {
-    let isMounted = true;
-
-    const loadRates = async () => {
-      setLoading(true);
-
-      try {
-        const data = await fetchRates(baseCurrency);
-
-        if (!isMounted) return;
-
-        if (data && Object.keys(data).length) {
-          setRates(data);
-          localStorage.setItem(
-            "rates",
-            JSON.stringify(data)
-          );
-        } else {
-          const cached = localStorage.getItem("rates");
-          setRates(cached ? JSON.parse(cached) : {});
-        }
-      } catch (e) {
-        console.error("Currency error:", e);
-
-        const cached = localStorage.getItem("rates");
-        setRates(cached ? JSON.parse(cached) : {});
-      } finally {
-        if (isMounted) setLoading(false);
-      }
-    };
-
-    loadRates();
-
-    return () => {
-      isMounted = false;
-    };
+    setInternalBaseCurrency(baseCurrency);
   }, [baseCurrency]);
 
-  /* ===== КОНВЕРТАЦИЯ ===== */
+  /* ===================== CACHE ===================== */
+  const loadFromCache = () => {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return false;
+
+      const parsed = JSON.parse(raw);
+
+      const isFresh =
+        Date.now() - parsed.timestamp < 1000 * 60 * 60;
+
+      if (isFresh && parsed.rates) {
+        const normalized = normalizeRates(parsed.rates);
+
+        setRates(normalized);
+        setLastUpdated(parsed.timestamp);
+
+        return true;
+      }
+
+      return false;
+    } catch (e) {
+      console.error("Cache error:", e);
+      return false;
+    }
+  };
+
+  /* ===================== LOAD ===================== */
+  const loadRates = async (force = false) => {
+    setLoading(true);
+
+    try {
+      if (!force) {
+        const hasCache = loadFromCache();
+        if (hasCache) {
+          setLoading(false);
+          return;
+        }
+      }
+
+      const data = await fetchRates(internalBaseCurrency);
+
+      const normalized = normalizeRates(data);
+
+      if (Object.keys(normalized).length) {
+        setPrevRates(rates);
+        setRates(normalized);
+
+        const timestamp = Date.now();
+        setLastUpdated(timestamp);
+
+        localStorage.setItem(
+          STORAGE_KEY,
+          JSON.stringify({
+            rates: normalized,
+            timestamp,
+          })
+        );
+      } else {
+        throw new Error("Empty rates");
+      }
+    } catch (e) {
+      console.error("Currency error:", e);
+
+      const cached = localStorage.getItem(STORAGE_KEY);
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        const normalized = normalizeRates(parsed.rates);
+
+        setPrevRates(rates);
+        setRates(normalized);
+        setLastUpdated(parsed.timestamp || null);
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  /* ===================== INIT ===================== */
+  useEffect(() => {
+    loadRates();
+  }, [internalBaseCurrency]);
+
+  /* ===================== WATCHLIST ===================== */
+  useEffect(() => {
+    const saved = localStorage.getItem(WATCHLIST_KEY);
+
+    if (saved) {
+      try {
+        setWatchlist(JSON.parse(saved));
+      } catch (e) {
+        console.error("Watchlist error:", e);
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem(
+      WATCHLIST_KEY,
+      JSON.stringify(watchlist)
+    );
+  }, [watchlist]);
+
+  /* ===================== ACTIONS ===================== */
+  const refreshRates = () => loadRates(true);
+
+  const addCurrency = (code) => {
+    setWatchlist((prev) =>
+      prev.includes(code) ? prev : [...prev, code]
+    );
+  };
+
+  const removeCurrency = (code) => {
+    setWatchlist((prev) =>
+      prev.filter((c) => c !== code)
+    );
+  };
+
+  /* ===================== CONVERT ===================== */
   const convert = (amount, from, to) => {
     if (!amount) return 0;
     if (from === to) return amount;
 
-    // если курсы не загружены
-    if (!rates[from] || !rates[to]) {
-      return amount;
-    }
+    if (!rates[from] || !rates[to]) return amount;
 
-    // перевод в базовую валюту
-    const amountInBase =
-      from === baseCurrency ? amount : amount / rates[from];
+    const base =
+      from === internalBaseCurrency
+        ? amount
+        : amount / rates[from];
 
-    // из базовой в нужную
-    const result =
-      to === baseCurrency
-        ? amountInBase
-        : amountInBase * rates[to];
-
-    if (isNaN(result)) return amount;
-
-    return result;
-  };
-
-  /* ===== VALUE ===== */
-  const value = {
-    rates,
-    convert,
-    loading,
-    baseCurrency, // 🔥 теперь доступна везде
+    return to === internalBaseCurrency
+      ? base
+      : base * rates[to];
   };
 
   return (
-    <CurrencyContext.Provider value={value}>
+    <CurrencyContext.Provider
+      value={{
+        rates,
+        prevRates,
+        convert,
+        loading,
+
+        /* FIXED */
+        baseCurrency: internalBaseCurrency,
+        setBaseCurrency: setInternalBaseCurrency,
+
+        lastUpdated,
+        refreshRates,
+
+        watchlist,
+        addCurrency,
+        removeCurrency,
+      }}
+    >
       {children}
     </CurrencyContext.Provider>
   );
 };
 
-/* ===== HOOK ===== */
+/* ===================== HOOK ===================== */
 export const useCurrency = () => {
-  const context = useContext(CurrencyContext);
+  const ctx = useContext(CurrencyContext);
 
-  if (!context) {
+  if (!ctx) {
     throw new Error(
       "useCurrency must be used within CurrencyProvider"
     );
   }
 
-  return context;
+  return ctx;
 };

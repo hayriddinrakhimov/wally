@@ -1,11 +1,13 @@
 import { AccountsStack } from "./AccountsStack";
+import { CurrencyWidget } from "./CurrencyWidget";
 
 export const MainContent = ({
   accounts,
   activeIndex,
   setActiveIndex,
   onAdd,
-  onEdit, // 🔥 добавили
+  onEdit,
+  onOpenCurrency,
 }) => {
   return (
     <div
@@ -14,16 +16,20 @@ export const MainContent = ({
         display: "flex",
         flexDirection: "column",
         overflow: "hidden",
+
+        // ⭐ ВАЖНО: безопасная зона под navbar
+        paddingBottom: 80, // подгони под высоту navbar (обычно 64–80)
       }}
     >
+      {/* ACCOUNTS */}
       <div
         style={{
           position: "relative",
           flex: 1,
           display: "flex",
-          alignItems: "flex-start", // 🔥 фикс пустоты
+          alignItems: "flex-start",
           justifyContent: "center",
-          paddingTop: 0, // 🔥 аккуратный отступ
+          paddingTop: 0,
         }}
       >
         <div
@@ -37,12 +43,13 @@ export const MainContent = ({
             index={activeIndex}
             setIndex={setActiveIndex}
             onAdd={onAdd}
-            onEdit={onEdit} // 🔥 теперь дойдёт до карточки
+            onEdit={onEdit}
           />
         </div>
       </div>
 
-      <div style={{ height: 16, flexShrink: 0 }} />
+      {/* CURRENCY WIDGET */}
+      <CurrencyWidget onOpen={onOpenCurrency} />
     </div>
   );
 };
