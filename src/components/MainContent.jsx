@@ -1,5 +1,6 @@
 import { AccountsStack } from "./AccountsStack";
 import { CurrencyWidget } from "./CurrencyWidget";
+import { TransactionsList } from "./TransactionsList";
 
 export const MainContent = ({
   accounts,
@@ -8,6 +9,7 @@ export const MainContent = ({
   onAdd,
   onEdit,
   onOpenCurrency,
+  transactions = [],
 }) => {
   return (
     <div
@@ -15,41 +17,62 @@ export const MainContent = ({
         flex: 1,
         display: "flex",
         flexDirection: "column",
-        overflow: "hidden",
 
-        // ⭐ ВАЖНО: безопасная зона под navbar
-        paddingBottom: 80, // подгони под высоту navbar (обычно 64–80)
+        // ❗ важно для flex scroll
+        minHeight: 0,
       }}
     >
-      {/* ACCOUNTS */}
+      {/* ================= ACCOUNTS ================= */}
       <div
         style={{
-          position: "relative",
-          flex: 1,
+          flexShrink: 0,
           display: "flex",
-          alignItems: "flex-start",
           justifyContent: "center",
-          paddingTop: 0,
+        }}
+      >
+        <AccountsStack
+          accounts={accounts}
+          index={activeIndex}
+          setIndex={setActiveIndex}
+          onAdd={onAdd}
+          onEdit={onEdit}
+        />
+      </div>
+
+      {/* ================= CURRENCY ================= */}
+      <div
+        style={{
+          flexShrink: 0,
+          marginTop: 6,
+          marginBottom: 6,
+        }}
+      >
+        <CurrencyWidget onOpen={onOpenCurrency} />
+      </div>
+
+      {/* ================= TRANSACTIONS (SCROLL AREA) ================= */}
+      <div
+        style={{
+          flex: 1,
+
+          // ❗ ключевой фикс
+          minHeight: 0,
+          overflow: "hidden",
         }}
       >
         <div
           style={{
-            overflow: "hidden",
-            width: "100%",
+            height: "100%",
+            overflowY: "auto",
+            overflowX: "hidden",
           }}
         >
-          <AccountsStack
+          <TransactionsList
+            transactions={transactions}
             accounts={accounts}
-            index={activeIndex}
-            setIndex={setActiveIndex}
-            onAdd={onAdd}
-            onEdit={onEdit}
           />
         </div>
       </div>
-
-      {/* CURRENCY WIDGET */}
-      <CurrencyWidget onOpen={onOpenCurrency} />
     </div>
   );
 };

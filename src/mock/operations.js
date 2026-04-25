@@ -1,0 +1,31 @@
+export const operationsMock = [
+  {
+    id: "op_1",
+    type: "expense",
+    amount: 12000,
+    currency: "KZT",
+    categoryId: "food",
+    note: "Обед",
+    date: Date.now() - 1000 * 60 * 60 * 5,
+  },
+  {
+    id: "op_2",
+    type: "income",
+    amount: 150000,
+    currency: "KZT",
+    categoryId: "salary",
+    note: "Зарплата",
+    date: Date.now() - 1000 * 60 * 60 * 24,
+  },
+  {
+    id: "op_3",
+    type: "transfer",
+    amount: 50000,
+    currency: "KZT",
+    categoryId: "transfer",
+    note: "Перевод на карту",
+    fromAccountId: "acc_1",
+    toAccountId: "acc_2",
+    date: Date.now() - 1000 * 60 * 60 * 48,
+  },
+];

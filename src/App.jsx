@@ -15,7 +15,7 @@ import { AccountColorPickerContent } from "./components/AccountColorPickerConten
 import { CurrencyPickerContent } from "./components/CurrencyPickerContent";
 
 import { useSetPrimary } from "./theme/ThemeProvider";
-import { CurrencyProvider, useCurrency } from "./context/CurrencyProvider";
+import { CurrencyProvider } from "./context/CurrencyProvider";
 
 export default function App() {
   const [activeTab, setActiveTab] = useState("wallet");
@@ -43,7 +43,7 @@ export default function App() {
   const [accountColor, setAccountColor] = useState("blue");
   const [accountDraft, setAccountDraft] = useState(null);
 
-  /* ===================== COLORS ===================== */
+  const [editingTransaction, setEditingTransaction] = useState(null);
 
   const ALL_COLORS = [
     "blue",
@@ -60,8 +60,6 @@ export default function App() {
 
   const getFreeColor = (used) =>
     ALL_COLORS.find((c) => !used.includes(c)) || "blue";
-
-  /* ===================== DEFAULT ACCOUNTS ===================== */
 
   useEffect(() => {
     if (!accountsRaw || accountsRaw.length === 0) {
@@ -94,38 +92,26 @@ export default function App() {
     }
   }, [accountsRaw, setAccounts]);
 
-  /* ===================== TRANSACTIONS ===================== */
-
   function addTransaction(tx) {
-    setTransactions((prev) => [tx, ...prev]);
+    const newTx = {
+      id: Date.now().toString(),
+      date: Date.now(),
+      ...tx,
+    };
 
-    setAccounts((prev) =>
-      prev.map((acc) => {
-        if (tx.type === "income" && acc.id === tx.to) {
-          return { ...acc, balance: acc.balance + tx.amount };
-        }
-
-        if (tx.type === "expense" && acc.id === tx.from) {
-          return { ...acc, balance: acc.balance - tx.amount };
-        }
-
-        if (tx.type === "transfer") {
-          if (acc.id === tx.from) {
-            return { ...acc, balance: acc.balance - tx.amount };
-          }
-          if (acc.id === tx.to) {
-            return { ...acc, balance: acc.balance + tx.amount };
-          }
-        }
-
-        return acc;
-      })
-    );
-
+    setTransactions((prev) => [newTx, ...prev]);
     setSheetType(null);
   }
 
-  /* ===================== ACCOUNTS ===================== */
+  function updateTransaction(updated) {
+    setTransactions((prev) =>
+      prev.map((tx) => (tx.id === updated.id ? updated : tx))
+    );
+  }
+
+  function deleteTransaction(id) {
+    setTransactions((prev) => prev.filter((tx) => tx.id !== id));
+  }
 
   function handleSaveAccount(data) {
     setAccounts((prev) =>
@@ -155,8 +141,6 @@ export default function App() {
     setSheetType(null);
     setAccountDraft(null);
   }
-
-  /* ===================== FOOTER ===================== */
 
   const renderFooter = () => {
     if (sheetType === "add") {
@@ -190,7 +174,14 @@ export default function App() {
 
   return (
     <CurrencyProvider baseCurrency={baseCurrency}>
-      <div style={{ minHeight: "100vh" }}>
+      <div
+        style={{
+          minHeight: "100vh",
+          display: "flex",
+          flexDirection: "column",
+          overflow: "hidden",
+        }}
+      >
         <Header
           onOpenSettings={() => {
             setSheetType("settings");
@@ -200,7 +191,16 @@ export default function App() {
           disabled={!!sheetType}
         />
 
-        <div style={{ paddingTop: 8 }}>
+        {/* 🔥 ВАЖНО: единый scroll контейнер */}
+        <div
+          style={{
+            flex: 1,
+            display: "flex",
+            flexDirection: "column",
+            overflow: "hidden",
+            paddingTop: 0, // ❌ убрали лишний зазор
+          }}
+        >
           <TotalBalance
             accounts={accountsRaw}
             baseCurrency={baseCurrency}
@@ -210,11 +210,11 @@ export default function App() {
             accounts={accountsRaw}
             activeIndex={activeIndex}
             setActiveIndex={setActiveIndex}
+            transactions={transactions}
+            onDeleteTransaction={deleteTransaction}
+            onUpdateTransaction={updateTransaction}
             onAdd={() => {
-              const used = accountsRaw
-                .map((a) => a.color)
-                .filter(Boolean);
-
+              const used = accountsRaw.map((a) => a.color).filter(Boolean);
               const color = getFreeColor(used);
 
               setEditingAccount(null);
@@ -258,7 +258,6 @@ export default function App() {
             <SettingsContent
               baseCurrency={baseCurrency}
               onChangeCurrency={setBaseCurrency}
-              onOpenColorPicker={() => setSettingsView("color")}
             />
           )}
 
@@ -278,9 +277,6 @@ export default function App() {
               account={accountDraft}
               color={accountColor}
               onChange={setAccountDraft}
-              onOpenColorPicker={() =>
-                setSheetType("accountColor")
-              }
               onSave={(data) =>
                 editingAccount
                   ? handleSaveAccount(data)
@@ -289,21 +285,24 @@ export default function App() {
             />
           )}
 
-          {sheetType === "accountColor" && (
-            <AccountColorPickerContent
-              value={accountColor}
-              onChange={(c) => {
-                setAccountColor(c);
-                setAccountDraft((p) => ({
-                  ...p,
-                  color: c,
-                }));
-                setSheetType("account");
-              }}
-            />
-          )}
+          {sheetType === "transaction" &&
+            editingTransaction && (
+              <TransactionEditContent
+                transaction={editingTransaction}
+                accounts={accountsRaw}
+                onSave={(updated) => {
+                  updateTransaction(updated);
+                  setSheetType(null);
+                  setEditingTransaction(null);
+                }}
+                onDelete={(id) => {
+                  deleteTransaction(id);
+                  setSheetType(null);
+                  setEditingTransaction(null);
+                }}
+              />
+            )}
 
-          {/* 💰 ВАЛЮТЫ */}
           {sheetType === "currency" && (
             <CurrencyPickerContent
               onClose={() => setSheetType(null)}

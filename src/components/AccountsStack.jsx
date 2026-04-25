@@ -8,12 +8,11 @@ export const AccountsStack = ({
   index = 0,
   setIndex,
   onAdd,
-  onEdit, // 🔥 ДОБАВИЛИ
+  onEdit,
 }) => {
   const isDragging = useRef(false);
 
-  const items = [...accounts, { id: "__add__" }];
-  const count = items.length;
+  const count = accounts.length;
 
   const handleDragStart = () => {
     isDragging.current = true;
@@ -58,7 +57,8 @@ export const AccountsStack = ({
         overflow: "hidden",
       }}
     >
-      {items.map((acc, i) => {
+      {/* ================= ACCOUNTS ================= */}
+      {accounts.map((acc, i) => {
         const offset = getOffset(i);
         const isActive = offset === 0;
 
@@ -88,28 +88,35 @@ export const AccountsStack = ({
               pointerEvents: isActive ? "auto" : "none",
             }}
           >
-            {acc.id === "__add__" ? (
-              <AddAccountCard
-                onClick={() => {
-                  if (!isDragging.current) onAdd();
-                }}
-              />
-            ) : (
-              <AccountCard
-                account={acc}
-                isActive={isActive}
-                onEdit={(account) => {
-                  if (!isDragging.current && onEdit) {
-                    onEdit(account);
-                  }
-                }}
-              />
-            )}
+            <AccountCard
+              account={acc}
+              isActive={isActive}
+              onEdit={(account) => {
+                if (!isDragging.current && onEdit) {
+                  onEdit(account);
+                }
+              }}
+            />
           </motion.div>
         );
       })}
 
-      {/* ===== ИНДИКАТОР ===== */}
+      {/* ================= ADD BUTTON (OVERLAY) ================= */}
+      <div
+        style={{
+          position: "absolute",
+          right: 10,
+          top: 10,
+        }}
+      >
+        <AddAccountCard
+          onClick={() => {
+            if (!isDragging.current) onAdd();
+          }}
+        />
+      </div>
+
+      {/* ================= INDICATOR ================= */}
       <div
         style={{
           position: "absolute",
@@ -118,7 +125,7 @@ export const AccountsStack = ({
           gap: 6,
         }}
       >
-        {items.map((_, i) => (
+        {accounts.map((_, i) => (
           <motion.div
             key={i}
             animate={{

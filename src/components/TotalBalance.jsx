@@ -3,9 +3,8 @@ import { useCurrency } from "../context/CurrencyProvider";
 import { formatMoney } from "../utils/formatMoney";
 
 export const TotalBalance = ({ accounts }) => {
-  const { convert, baseCurrency, rates } = useCurrency();
+  const { convert, baseCurrency } = useCurrency();
 
-  /* ================= COLORS ================= */
   const getColor = (acc) => {
     const map = {
       cash: "#10b981",
@@ -16,8 +15,7 @@ export const TotalBalance = ({ accounts }) => {
     return acc.color || map[acc.type] || "var(--primary)";
   };
 
-  /* ================= ACCOUNTS IN BASE ================= */
-  const accountsWithBase = useMemo(() => {
+  const enriched = useMemo(() => {
     return accounts.map((acc) => {
       const baseAmount = convert(
         acc.balance,
@@ -31,33 +29,28 @@ export const TotalBalance = ({ accounts }) => {
         uiColor: getColor(acc),
       };
     });
-  }, [accounts, baseCurrency, convert, rates]);
+  }, [accounts, baseCurrency, convert]);
 
-  /* ================= SORT ================= */
-  const sortedAccounts = useMemo(() => {
+  const sorted = useMemo(() => {
     const order = {
       cash: 0,
       card: 1,
       deposit: 2,
     };
 
-    return [...accountsWithBase].sort(
+    return [...enriched].sort(
       (a, b) => order[a.type] - order[b.type]
     );
-  }, [accountsWithBase, rates]);
+  }, [enriched]);
 
-  /* ================= TOTAL ================= */
   const total = useMemo(() => {
-    return sortedAccounts.reduce(
-      (sum, acc) => sum + acc.baseAmount,
-      0
-    );
-  }, [sortedAccounts, rates]);
+    return sorted.reduce((sum, acc) => sum + acc.baseAmount, 0);
+  }, [sorted]);
 
   return (
     <div
       style={{
-        margin: 16,
+        margin: "0 16px",
         padding: 20,
         borderRadius: 24,
         background: "var(--bg)",
@@ -65,18 +58,29 @@ export const TotalBalance = ({ accounts }) => {
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
-        gap: 16,
+        gap: 14,
       }}
     >
-      {/* TITLE */}
-      <div style={{ fontSize: 13, color: "var(--text-secondary)" }}>
+      {/* 🔥 STICKY HEADER */}
+      <div
+        style={{
+          position: "sticky",
+          top: 0,
+          zIndex: 10,
+          background: "var(--bg)",
+          padding: "6px 0",
+          fontSize: 12,
+          color: "var(--text-secondary)",
+          backdropFilter: "blur(8px)",
+        }}
+      >
         ОБЩИЙ БАЛАНС
       </div>
 
       {/* TOTAL */}
       <div
         style={{
-          fontSize: 42,
+          fontSize: 38,
           fontWeight: 700,
           color: "var(--primary)",
         }}
@@ -84,7 +88,7 @@ export const TotalBalance = ({ accounts }) => {
         {formatMoney(total, baseCurrency)}
       </div>
 
-      {/* LIST */}
+      {/* ACCOUNTS */}
       <div
         style={{
           width: "100%",
@@ -93,7 +97,7 @@ export const TotalBalance = ({ accounts }) => {
           gap: 10,
         }}
       >
-        {sortedAccounts.map((acc) => (
+        {sorted.map((acc) => (
           <div
             key={acc.id}
             style={{
@@ -101,14 +105,21 @@ export const TotalBalance = ({ accounts }) => {
               justifyContent: "space-between",
             }}
           >
-            <span style={{ color: "var(--text-secondary)" }}>
+            <span style={{ color: "var(--text)" }}>
               {acc.name}
             </span>
 
             <div style={{ textAlign: "right" }}>
-              <div>{formatMoney(acc.balance, acc.currency)}</div>
+              <div style={{ color: "var(--text)" }}>
+                {formatMoney(acc.balance, acc.currency)}
+              </div>
 
-              <div style={{ fontSize: 12, color: "var(--text-secondary)" }}>
+              <div
+                style={{
+                  fontSize: 12,
+                  color: "var(--text-secondary)",
+                }}
+              >
                 ≈ {formatMoney(acc.baseAmount, baseCurrency)}
               </div>
             </div>
@@ -116,17 +127,17 @@ export const TotalBalance = ({ accounts }) => {
         ))}
       </div>
 
-      {/* PROGRESS BAR */}
+      {/* PROGRESS */}
       <div
         style={{
           width: "100%",
           display: "flex",
-          height: 10,
+          height: 8,
           borderRadius: 999,
           overflow: "hidden",
         }}
       >
-        {sortedAccounts.map((acc) => {
+        {sorted.map((acc) => {
           const percent = total
             ? (acc.baseAmount / total) * 100
             : 0;
