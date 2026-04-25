@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useState, useCallback } from "react";
 import { fetchRates } from "../services/currencyService";
 
 const CurrencyContext = createContext(null);
@@ -41,7 +41,6 @@ export const CurrencyProvider = ({
     "RUB",
   ]);
 
-  /* ✅ INTERNAL BASE CURRENCY (FIX ШАГ 1) */
   const [internalBaseCurrency, setInternalBaseCurrency] =
     useState(baseCurrency);
 
@@ -93,8 +92,7 @@ export const CurrencyProvider = ({
         }
       }
 
-      const data = await fetchRates(internalBaseCurrency);
-
+      const data = await fetchRates("USD"); // 🔥 фиксированная база
       const normalized = normalizeRates(data);
 
       if (Object.keys(normalized).length) {
@@ -131,10 +129,10 @@ export const CurrencyProvider = ({
     }
   };
 
-  /* ===================== INIT ===================== */
+  /* ===================== INIT (🔥 FIX) ===================== */
   useEffect(() => {
     loadRates();
-  }, [internalBaseCurrency]);
+  }, []);
 
   /* ===================== WATCHLIST ===================== */
   useEffect(() => {
@@ -171,22 +169,25 @@ export const CurrencyProvider = ({
     );
   };
 
-  /* ===================== CONVERT ===================== */
-  const convert = (amount, from, to) => {
-    if (!amount) return 0;
-    if (from === to) return amount;
+  /* ===================== CONVERT (🔥 FIXED) ===================== */
+  const convert = useCallback(
+    (amount, from, to) => {
+      if (!amount) return 0;
+      if (from === to) return amount;
 
-    if (!rates[from] || !rates[to]) return amount;
+      if (!rates[from] || !rates[to]) return amount;
 
-    const base =
-      from === internalBaseCurrency
-        ? amount
-        : amount / rates[from];
+      const base =
+        from === internalBaseCurrency
+          ? amount
+          : amount / rates[from];
 
-    return to === internalBaseCurrency
-      ? base
-      : base * rates[to];
-  };
+      return to === internalBaseCurrency
+        ? base
+        : base * rates[to];
+    },
+    [rates, internalBaseCurrency]
+  );
 
   return (
     <CurrencyContext.Provider
@@ -196,7 +197,6 @@ export const CurrencyProvider = ({
         convert,
         loading,
 
-        /* FIXED */
         baseCurrency: internalBaseCurrency,
         setBaseCurrency: setInternalBaseCurrency,
 
