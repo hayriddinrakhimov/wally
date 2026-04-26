@@ -1,10 +1,8 @@
 export const DAY_MS = 24 * 60 * 60 * 1000;
 
-export const PERIOD_OPTIONS = [
-  { key: "currentMonth", label: "Месяц" },
-  { key: "30d", label: "30д" },
-  { key: "90d", label: "90д" },
-];
+// Backward-compat export for stale HMR modules that still import PERIOD_OPTIONS.
+// UI now uses manual calendar range selection.
+export const PERIOD_OPTIONS = [{ key: "currentMonth", label: "Месяц" }];
 
 export const startOfDay = (value) => {
   const date = new Date(value);
@@ -18,7 +16,7 @@ export const endOfDay = (value) => {
   return date.getTime();
 };
 
-const getCurrentMonthRange = (now) => {
+export const getCurrentMonthRange = (now = Date.now()) => {
   const date = new Date(now);
   const start = new Date(date.getFullYear(), date.getMonth(), 1).getTime();
 
@@ -28,32 +26,42 @@ const getCurrentMonthRange = (now) => {
   };
 };
 
-const getLastDaysRange = (now, days) => {
-  const end = endOfDay(now);
-  const start = startOfDay(end - (days - 1) * DAY_MS);
+export const getPreviousRange = (start, end) => {
+  const normalizedStart = startOfDay(start);
+  const normalizedEnd = endOfDay(end);
+  const duration = normalizedEnd - normalizedStart + 1;
 
-  return { start, end };
+  return {
+    previousStart: normalizedStart - duration,
+    previousEnd: normalizedStart - 1,
+  };
+};
+
+export const getRangeWithPrevious = (start, end) => {
+  const normalizedStart = startOfDay(start);
+  const normalizedEnd = endOfDay(end);
+  const previous = getPreviousRange(normalizedStart, normalizedEnd);
+
+  return {
+    start: normalizedStart,
+    end: normalizedEnd,
+    ...previous,
+  };
 };
 
 export const getPeriodRange = (periodKey = "currentMonth", now = Date.now()) => {
+  // Kept for backward compatibility with existing callsites.
+  if (periodKey === "currentMonth") {
+    const range = getCurrentMonthRange(now);
+    return getRangeWithPrevious(range.start, range.end);
+  }
+
+  const days = periodKey === "90d" ? 90 : 30;
   const normalizedNow = Number.isFinite(Number(now)) ? Number(now) : Date.now();
+  const end = endOfDay(normalizedNow);
+  const start = startOfDay(end - (days - 1) * DAY_MS);
 
-  const range =
-    periodKey === "30d"
-      ? getLastDaysRange(normalizedNow, 30)
-      : periodKey === "90d"
-      ? getLastDaysRange(normalizedNow, 90)
-      : getCurrentMonthRange(normalizedNow);
-
-  const duration = range.end - range.start + 1;
-  const previousStart = range.start - duration;
-  const previousEnd = range.start - 1;
-
-  return {
-    ...range,
-    previousStart,
-    previousEnd,
-  };
+  return getRangeWithPrevious(start, end);
 };
 
 export const isInRange = (date, start, end) => {

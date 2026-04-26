@@ -18,26 +18,78 @@ const normalizeCurrency = (currency) => {
     : FALLBACK_CURRENCY;
 };
 
-export const formatMoney = (value, currency = "KZT") => {
+const formatCompactNumberFallback = (amount) => {
+  const abs = Math.abs(amount);
+  const sign = amount < 0 ? "-" : "";
+
+  if (abs >= 1_000_000_000) {
+    const value = abs / 1_000_000_000;
+    return `${sign}${new Intl.NumberFormat("ru-RU", {
+      maximumFractionDigits: 1,
+    }).format(value)} млрд`;
+  }
+
+  if (abs >= 1_000_000) {
+    const value = abs / 1_000_000;
+    return `${sign}${new Intl.NumberFormat("ru-RU", {
+      maximumFractionDigits: 1,
+    }).format(value)} млн`;
+  }
+
+  if (abs >= 1_000) {
+    const value = abs / 1_000;
+    return `${sign}${new Intl.NumberFormat("ru-RU", {
+      maximumFractionDigits: 1,
+    }).format(value)} тыс`;
+  }
+
+  return new Intl.NumberFormat("ru-RU", { maximumFractionDigits: 0 }).format(amount);
+};
+
+export const formatMoney = (value, currency = "KZT", options = {}) => {
   const amount = Number(value);
   if (!Number.isFinite(amount)) return "0";
 
   const normalizedCurrency = normalizeCurrency(currency);
+  const compact = Boolean(options?.compact);
+  const maximumFractionDigits = Number.isFinite(Number(options?.maximumFractionDigits))
+    ? Number(options.maximumFractionDigits)
+    : compact
+    ? 1
+    : 0;
+  const minimumFractionDigits = Number.isFinite(Number(options?.minimumFractionDigits))
+    ? Number(options.minimumFractionDigits)
+    : 0;
 
   try {
     return new Intl.NumberFormat("ru-RU", {
       style: "currency",
       currency: normalizedCurrency,
-      maximumFractionDigits: 0,
+      notation: compact ? "compact" : "standard",
+      compactDisplay: "short",
+      minimumFractionDigits,
+      maximumFractionDigits,
     }).format(amount);
   } catch {
-    const number = new Intl.NumberFormat("ru-RU", {
-      maximumFractionDigits: 0,
-    }).format(amount);
+    const number = compact
+      ? formatCompactNumberFallback(amount)
+      : new Intl.NumberFormat("ru-RU", {
+          minimumFractionDigits,
+          maximumFractionDigits,
+        }).format(amount);
 
-    const symbol =
-      CURRENCY_SYMBOLS[normalizedCurrency] || normalizedCurrency;
+    const symbol = CURRENCY_SYMBOLS[normalizedCurrency] || normalizedCurrency;
 
     return `${number} ${symbol}`;
   }
+};
+
+export const formatMoneySmart = (value, currency = "KZT") => {
+  const amount = Number(value);
+  const compact = Number.isFinite(amount) && Math.abs(amount) >= 1_000_000;
+
+  return formatMoney(value, currency, {
+    compact,
+    maximumFractionDigits: compact ? 1 : 0,
+  });
 };

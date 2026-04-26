@@ -1,6 +1,6 @@
 ﻿import { useMemo } from "react";
 import { useCurrency } from "../context/useCurrency";
-import { formatMoney } from "../utils/formatMoney";
+import { formatMoney, formatMoneySmart } from "../utils/formatMoney";
 
 export const TotalBalance = ({ accounts }) => {
   const { convert, baseCurrency } = useCurrency();
@@ -47,6 +47,9 @@ export const TotalBalance = ({ accounts }) => {
     () => sorted.reduce((sum, account) => sum + account.baseAmount, 0),
     [sorted]
   );
+  const totalLabel = formatMoneySmart(total, baseCurrency);
+  const totalFontSize =
+    totalLabel.length > 18 ? 26 : totalLabel.length > 14 ? 30 : 34;
 
   return (
     <div
@@ -79,12 +82,17 @@ export const TotalBalance = ({ accounts }) => {
 
       <div
         style={{
-          fontSize: 34,
+          fontSize: totalFontSize,
           fontWeight: 700,
           color: "var(--primary)",
+          lineHeight: 1.15,
+          maxWidth: "100%",
+          whiteSpace: "nowrap",
+          overflow: "hidden",
+          textOverflow: "ellipsis",
         }}
       >
-        {formatMoney(total, baseCurrency)}
+        {totalLabel}
       </div>
 
       <div
@@ -107,7 +115,7 @@ export const TotalBalance = ({ accounts }) => {
 
             <div style={{ textAlign: "right" }}>
               <div style={{ color: "var(--text)" }}>
-                {formatMoney(account.balance, account.currency)}
+                {formatMoneySmart(account.balance, account.currency)}
               </div>
 
               {account.currency !== baseCurrency && (

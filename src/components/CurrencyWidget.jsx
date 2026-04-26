@@ -1,6 +1,7 @@
 ﻿import { useMemo, useState } from "react";
 import { useCurrency } from "../context/useCurrency";
 import { Plus, ChevronLeft, ChevronRight } from "lucide-react";
+import { formatMoney } from "../utils/formatMoney";
 
 const PRIORITY = ["USD", "EUR", "RUB"];
 
@@ -47,7 +48,10 @@ export const CurrencyWidget = ({ onOpen }) => {
   const format = (currency) => {
     const value = convert(1, currency, baseCurrency);
     if (!Number.isFinite(value)) return "—";
-    return value < 1 ? value.toFixed(4) : value.toFixed(2);
+    return formatMoney(value, baseCurrency, {
+      maximumFractionDigits: value < 1 ? 4 : 2,
+      minimumFractionDigits: value < 1 ? 2 : 0,
+    });
   };
 
   return (
@@ -56,8 +60,8 @@ export const CurrencyWidget = ({ onOpen }) => {
         margin: "8px 16px",
         padding: 14,
         borderRadius: 16,
-        background: "white",
-        border: "1px solid #eee",
+        background: "var(--bg)",
+        border: "1px solid var(--border)",
         display: "flex",
         flexDirection: "column",
         gap: 10,
@@ -116,6 +120,8 @@ export const CurrencyWidget = ({ onOpen }) => {
       {!loading &&
         visible.map((currency) => {
           const trend = getTrend(currency);
+          const trendColor =
+            trend === "up" ? "#16a34a" : trend === "down" ? "#dc2626" : "var(--text-secondary)";
 
           return (
             <div
@@ -123,18 +129,28 @@ export const CurrencyWidget = ({ onOpen }) => {
               style={{
                 display: "flex",
                 justifyContent: "space-between",
+                alignItems: "center",
+                gap: 8,
                 padding: "6px 0",
                 fontSize: 13,
               }}
             >
-              <div style={{ fontWeight: 600 }}>
+              <div style={{ fontWeight: 600, whiteSpace: "nowrap" }}>
                 {currency}
-                {trend === "up" && <span style={{ marginLeft: 6 }}>↑</span>}
-                {trend === "down" && <span style={{ marginLeft: 6 }}>↓</span>}
+                {trend === "up" && <span style={{ marginLeft: 6, color: trendColor }}>↑</span>}
+                {trend === "down" && <span style={{ marginLeft: 6, color: trendColor }}>↓</span>}
               </div>
 
-              <div>
-                1 {currency} = {format(currency)} {baseCurrency}
+              <div
+                style={{
+                  minWidth: 0,
+                  textAlign: "right",
+                  whiteSpace: "nowrap",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                }}
+              >
+                1 {currency} = {format(currency)}
               </div>
             </div>
           );

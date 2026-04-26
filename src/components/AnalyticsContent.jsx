@@ -12,9 +12,16 @@ import {
   Tooltip,
 } from "chart.js";
 import { Bar, Doughnut, Line } from "react-chartjs-2";
+import {
+  Activity,
+  ArrowDownCircle,
+  ArrowUpCircle,
+  ChartPie,
+  Sigma,
+} from "lucide-react";
 import { useCurrency } from "../context/useCurrency";
 import { formatMoney } from "../utils/formatMoney";
-import { PERIOD_OPTIONS, getPeriodRange } from "../utils/dateRanges";
+import { getCurrentMonthRange, getRangeWithPrevious } from "../utils/dateRanges";
 import {
   filterTransactionsByRange,
   getCategoryComparison,
@@ -22,6 +29,9 @@ import {
   getExpenseByCategory,
   getKpiTotals,
 } from "../utils/financeSelectors";
+import { DateRangePicker } from "./common/DateRangePicker";
+import { MetricCard } from "./common/MetricCard";
+import { SurfaceCard } from "./common/SurfaceCard";
 
 ChartJS.register(
   ArcElement,
@@ -46,18 +56,25 @@ const CATEGORY_COLORS = [
   "#14b8a6",
 ];
 
-const cardStyle = {
-  border: "1px solid var(--border)",
-  borderRadius: 8,
-  background: "var(--bg)",
-  padding: 12,
+const calcTrend = (current, previous) => {
+  if (!Number.isFinite(current) || !Number.isFinite(previous) || previous === 0) {
+    return null;
+  }
+  return ((current - previous) / Math.abs(previous)) * 100;
 };
 
 export const AnalyticsContent = ({ transactions = [] }) => {
-  const [periodKey, setPeriodKey] = useState("currentMonth");
-  const { convert, baseCurrency } = useCurrency();
+  const monthRange = getCurrentMonthRange();
+  const [dateRange, setDateRange] = useState({
+    start: monthRange.start,
+    end: monthRange.end,
+  });
 
-  const range = useMemo(() => getPeriodRange(periodKey), [periodKey]);
+  const { convert, baseCurrency } = useCurrency();
+  const range = useMemo(
+    () => getRangeWithPrevious(dateRange.start, dateRange.end),
+    [dateRange.start, dateRange.end]
+  );
 
   const currentTransactions = useMemo(
     () => filterTransactionsByRange(transactions, range.start, range.end),
@@ -78,10 +95,22 @@ export const AnalyticsContent = ({ transactions = [] }) => {
     () => getKpiTotals(currentTransactions, convert, baseCurrency),
     [currentTransactions, convert, baseCurrency]
   );
+  const previousTotals = useMemo(
+    () => getKpiTotals(previousTransactions, convert, baseCurrency),
+    [previousTransactions, convert, baseCurrency]
+  );
 
   const expensesByCategory = useMemo(
     () => getExpenseByCategory(currentTransactions, convert, baseCurrency),
     [currentTransactions, convert, baseCurrency]
+  );
+  const categoryColorById = useMemo(
+    () =>
+      expensesByCategory.reduce((acc, item, index) => {
+        acc[item.id] = CATEGORY_COLORS[index % CATEGORY_COLORS.length];
+        return acc;
+      }, {}),
+    [expensesByCategory]
   );
 
   const categoriesCompare = useMemo(
@@ -128,13 +157,13 @@ export const AnalyticsContent = ({ transactions = [] }) => {
       labels: categoriesCompare.map((item) => item.label),
       datasets: [
         {
-          label: "Текущий",
+          label: "Текущий период",
           data: categoriesCompare.map((item) => item.current),
-          backgroundColor: "#3b82f6",
+          backgroundColor: "#7c3aed",
           borderRadius: 6,
         },
         {
-          label: "Прошлый",
+          label: "Предыдущий период",
           data: categoriesCompare.map((item) => item.previous),
           backgroundColor: "#cbd5e1",
           borderRadius: 6,
@@ -183,40 +212,15 @@ export const AnalyticsContent = ({ transactions = [] }) => {
       <div style={{ marginBottom: 12 }}>
         <div style={{ fontSize: 18, fontWeight: 700 }}>Аналитика</div>
         <div style={{ fontSize: 12, color: "var(--text-secondary)" }}>
-          Срез по категориям и трендам
+          Детальный разбор расходов и динамики
         </div>
       </div>
 
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
-          gap: 8,
-          marginBottom: 12,
-        }}
-      >
-        {PERIOD_OPTIONS.map((option) => {
-          const active = periodKey === option.key;
-
-          return (
-            <button
-              key={option.key}
-              onClick={() => setPeriodKey(option.key)}
-              style={{
-                height: 34,
-                borderRadius: 8,
-                border: active ? "none" : "1px solid var(--border)",
-                background: active ? "var(--primary)" : "transparent",
-                color: active ? "#fff" : "var(--text)",
-                fontWeight: 600,
-                fontSize: 12,
-              }}
-            >
-              {option.label}
-            </button>
-          );
-        })}
-      </div>
+      <DateRangePicker
+        start={dateRange.start}
+        end={dateRange.end}
+        onChange={(start, end) => setDateRange({ start, end })}
+      />
 
       <div
         style={{
@@ -226,13 +230,30 @@ export const AnalyticsContent = ({ transactions = [] }) => {
           marginBottom: 12,
         }}
       >
-        <KpiCard title="Доход" value={formatMoney(totals.income, baseCurrency)} />
-        <KpiCard title="Расход" value={formatMoney(totals.expense, baseCurrency)} />
-        <KpiCard title="Итог" value={formatMoney(totals.net, baseCurrency)} />
+        <MetricCard
+          title="Доход"
+          value={formatMoney(totals.income, baseCurrency)}
+          icon={ArrowUpCircle}
+          trend={calcTrend(totals.income, previousTotals.income)}
+          tone="green"
+        />
+        <MetricCard
+          title="Расход"
+          value={formatMoney(totals.expense, baseCurrency)}
+          icon={ArrowDownCircle}
+          trend={calcTrend(totals.expense, previousTotals.expense)}
+          tone="red"
+        />
+        <MetricCard
+          title="Итог"
+          value={formatMoney(totals.net, baseCurrency)}
+          icon={Sigma}
+          trend={calcTrend(totals.net, previousTotals.net)}
+          tone="purple"
+        />
       </div>
 
-      <div style={{ ...cardStyle, marginBottom: 12 }}>
-        <div style={{ fontWeight: 600, marginBottom: 10 }}>Расходы по категориям</div>
+      <SurfaceCard title="Расходы по категориям" icon={ChartPie} style={{ marginBottom: 12 }}>
         <div style={{ height: 240 }}>
           {expensesByCategory.length ? (
             <Doughnut
@@ -248,10 +269,9 @@ export const AnalyticsContent = ({ transactions = [] }) => {
             <EmptyState />
           )}
         </div>
-      </div>
+      </SurfaceCard>
 
-      <div style={{ ...cardStyle, marginBottom: 12 }}>
-        <div style={{ fontWeight: 600, marginBottom: 10 }}>Сравнение категорий</div>
+      <SurfaceCard title="Сравнение категорий" icon={Activity} style={{ marginBottom: 12 }}>
         <div style={{ height: 240 }}>
           {categoriesCompare.length ? (
             <Bar
@@ -266,10 +286,9 @@ export const AnalyticsContent = ({ transactions = [] }) => {
             <EmptyState />
           )}
         </div>
-      </div>
+      </SurfaceCard>
 
-      <div style={{ ...cardStyle, marginBottom: 12 }}>
-        <div style={{ fontWeight: 600, marginBottom: 10 }}>Тренд доход/расход</div>
+      <SurfaceCard title="Тренд доход/расход" icon={Activity} style={{ marginBottom: 12 }}>
         <div style={{ height: 240 }}>
           <Line
             data={lineData}
@@ -281,50 +300,75 @@ export const AnalyticsContent = ({ transactions = [] }) => {
             }}
           />
         </div>
-      </div>
+      </SurfaceCard>
 
-      <div style={cardStyle}>
-        <div style={{ fontWeight: 600, marginBottom: 10 }}>Топ категорий</div>
+      <SurfaceCard title="Топ категорий" icon={ChartPie}>
         {expensesByCategory.length ? (
           expensesByCategory.slice(0, 5).map((category) => {
             const percent = totals.expense
               ? Math.round((category.value / totals.expense) * 100)
               : 0;
+            const color = categoryColorById[category.id] || "var(--primary)";
 
             return (
               <div
                 key={category.id}
                 style={{
-                  display: "flex",
-                  justifyContent: "space-between",
                   padding: "8px 0",
                   borderBottom: "1px solid var(--border)",
                   fontSize: 13,
                 }}
               >
-                <span>{category.label}</span>
-                <span>
-                  {formatMoney(category.value, baseCurrency)} • {percent}%
-                </span>
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    gap: 8,
+                  }}
+                >
+                  <span>{category.label}</span>
+                  <div style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+                    <span
+                      style={{
+                        width: 8,
+                        height: 8,
+                        borderRadius: 999,
+                        background: color,
+                      }}
+                    />
+                    <span>
+                      {formatMoney(category.value, baseCurrency)} • {percent}%
+                    </span>
+                  </div>
+                </div>
+                <div
+                  style={{
+                    height: 6,
+                    borderRadius: 999,
+                    background: "var(--border)",
+                    overflow: "hidden",
+                    marginTop: 6,
+                  }}
+                >
+                  <div
+                    style={{
+                      width: `${Math.min(100, percent)}%`,
+                      height: "100%",
+                      background: color,
+                    }}
+                  />
+                </div>
               </div>
             );
           })
         ) : (
           <EmptyState />
         )}
-      </div>
+      </SurfaceCard>
     </div>
   );
 };
-
-const KpiCard = ({ title, value }) => (
-  <div style={cardStyle}>
-    <div style={{ fontSize: 11, color: "var(--text-secondary)", marginBottom: 4 }}>
-      {title}
-    </div>
-    <div style={{ fontSize: 13, fontWeight: 700 }}>{value}</div>
-  </div>
-);
 
 const EmptyState = () => (
   <div
@@ -339,6 +383,6 @@ const EmptyState = () => (
       padding: 12,
     }}
   >
-    Недостаточно данных
+    Недостаточно данных для выбранного периода
   </div>
 );

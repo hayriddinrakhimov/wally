@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { useLocalStorage } from "../hooks/useLocalStorage";
 import { useCurrency } from "../context/useCurrency";
+import { formatMoneySmart } from "../utils/formatMoney";
 import {
   Car,
   Check,
@@ -38,6 +39,26 @@ const getIcon = (label = "") => {
   return Sparkles;
 };
 
+const ICON_OPTIONS = [
+  { key: "shopping", icon: ShoppingCart },
+  { key: "coffee", icon: Coffee },
+  { key: "car", icon: Car },
+  { key: "wallet", icon: Wallet },
+  { key: "gift", icon: Gift },
+  { key: "home", icon: Home },
+  { key: "game", icon: Gamepad2 },
+  { key: "health", icon: Heart },
+  { key: "sparkles", icon: Sparkles },
+];
+
+const resolveCategoryIcon = (category) => {
+  const iconKey = String(category?.iconKey || "").trim();
+  const fromKey = ICON_OPTIONS.find((item) => item.key === iconKey);
+  if (fromKey) return fromKey.icon;
+
+  return getIcon(`${category?.label || ""} ${category?.key || ""}`);
+};
+
 const formatNumber = (value) => {
   if (!value) return "";
   const numeric = value.replace(/\D/g, "");
@@ -64,7 +85,7 @@ export const TransactionForm = ({
   initialDraft = null,
   onSubmit,
 }) => {
-  const { watchlist, baseCurrency } = useCurrency();
+  const { watchlist, baseCurrency, convert } = useCurrency();
   const [categories, setCategories] = useLocalStorage(
     "categories_v3",
     defaultCategories
@@ -72,6 +93,7 @@ export const TransactionForm = ({
 
   const [adding, setAdding] = useState(false);
   const [newCategory, setNewCategory] = useState("");
+  const [newCategoryIconKey, setNewCategoryIconKey] = useState("sparkles");
 
   const currentCategories = useMemo(
     () => (type === "transfer" ? [] : categories[type] || []),
@@ -121,6 +143,31 @@ export const TransactionForm = ({
     const set = new Set([baseCurrency, ...(watchlist || []), currency, "KZT"]);
     return Array.from(set).filter(Boolean);
   }, [baseCurrency, watchlist, currency]);
+  const amountDigits = String(amount || "").replace(/\D/g, "").length;
+  const amountFontSize = amountDigits > 12 ? 24 : amountDigits > 9 ? 28 : 32;
+  const parsedAmount = parseNumber(amount);
+  const amountInBase = convert(parsedAmount, currency, baseCurrency);
+  const showAmountInBase =
+    parsedAmount > 0 && currency && baseCurrency && currency !== baseCurrency;
+
+  useEffect(() => {
+    if (type === "transfer") {
+      if (categoryId !== "transfer") {
+        setCategoryId("transfer");
+      }
+      return;
+    }
+
+    if (!currentCategories.length) {
+      setCategoryId(null);
+      return;
+    }
+
+    const hasSelected = currentCategories.some((item) => item.key === categoryId);
+    if (!hasSelected) {
+      setCategoryId(currentCategories[0].key);
+    }
+  }, [type, currentCategories, categoryId]);
 
   const handleSubmit = useCallback(() => {
     if (typeof onSubmit !== "function") return;
@@ -186,6 +233,7 @@ export const TransactionForm = ({
       key: Date.now().toString(),
       label: normalizedLabel,
       color: COLORS[Math.floor(Math.random() * COLORS.length)],
+      iconKey: newCategoryIconKey,
     };
 
     setCategories((prev) => ({
@@ -195,6 +243,7 @@ export const TransactionForm = ({
 
     setCategoryId(newCat.key);
     setNewCategory("");
+    setNewCategoryIconKey("sparkles");
     setAdding(false);
   };
 
@@ -223,11 +272,12 @@ export const TransactionForm = ({
           style={{
             flex: 1,
             minWidth: 0,
-            fontSize: 32,
+            fontSize: amountFontSize,
             fontWeight: 700,
             border: "none",
             outline: "none",
             background: "transparent",
+            lineHeight: 1.2,
           }}
         />
 
@@ -252,10 +302,23 @@ export const TransactionForm = ({
         </select>
       </div>
 
+      {showAmountInBase && (
+        <div
+          style={{
+            marginTop: -8,
+            fontSize: 12,
+            color: "var(--text-secondary)",
+            textAlign: "right",
+          }}
+        >
+          ≈ {formatMoneySmart(amountInBase, baseCurrency)}
+        </div>
+      )}
+
       {type !== "transfer" && (
         <div style={{ display: "flex", gap: 8, overflowX: "auto" }}>
           {currentCategories.map((category) => {
-            const Icon = getIcon(category.label);
+            const Icon = resolveCategoryIcon(category);
             const active = categoryId === category.key;
 
             return (
@@ -272,6 +335,11 @@ export const TransactionForm = ({
                   cursor: "pointer",
                   background: active ? category.color : `${category.color}22`,
                   color: active ? "#fff" : "#000",
+                  maxWidth: 170,
+                  whiteSpace: "nowrap",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  flexShrink: 0,
                 }}
               >
                 <Icon size={16} />

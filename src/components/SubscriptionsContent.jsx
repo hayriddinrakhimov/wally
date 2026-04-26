@@ -1,7 +1,17 @@
-import { CalendarClock, CheckCircle2, Pencil, Plus, Trash2 } from "lucide-react";
+import {
+  AlertTriangle,
+  CalendarClock,
+  CheckCircle2,
+  Clock3,
+  Pencil,
+  Plus,
+  Trash2,
+} from "lucide-react";
 import { useMemo, useState } from "react";
+// eslint-disable-next-line no-unused-vars
+import { motion } from "framer-motion";
 import { useCurrency } from "../context/useCurrency";
-import { PERIOD_OPTIONS, getPeriodRange } from "../utils/dateRanges";
+import { getCurrentMonthRange, getRangeWithPrevious } from "../utils/dateRanges";
 import {
   filterTransactionsByRange,
   getSubscriptionStatus,
@@ -9,13 +19,8 @@ import {
   toBaseAmount,
 } from "../utils/financeSelectors";
 import { formatMoney } from "../utils/formatMoney";
-
-const cardStyle = {
-  border: "1px solid var(--border)",
-  borderRadius: 8,
-  background: "var(--bg)",
-  padding: 12,
-};
+import { DateRangePicker } from "./common/DateRangePicker";
+import { SurfaceCard } from "./common/SurfaceCard";
 
 const STATUS_META = {
   active: { label: "Активна", color: "#334155", bg: "#f1f5f9" },
@@ -52,10 +57,17 @@ export const SubscriptionsContent = ({
   onArchive,
   onMarkPaid,
 }) => {
-  const [periodKey, setPeriodKey] = useState("currentMonth");
+  const monthRange = getCurrentMonthRange();
+  const [dateRange, setDateRange] = useState({
+    start: monthRange.start,
+    end: monthRange.end,
+  });
   const { baseCurrency, convert } = useCurrency();
 
-  const range = useMemo(() => getPeriodRange(periodKey), [periodKey]);
+  const range = useMemo(
+    () => getRangeWithPrevious(dateRange.start, dateRange.end),
+    [dateRange.start, dateRange.end]
+  );
 
   const transactionsInRange = useMemo(
     () => filterTransactionsByRange(transactions, range.start, range.end),
@@ -93,6 +105,18 @@ export const SubscriptionsContent = ({
       return sum + toBaseAmount(tx, convert, baseCurrency);
     }, 0);
   }, [transactionsInRange, convert, baseCurrency]);
+
+  const indicators = useMemo(() => {
+    return items.reduce(
+      (acc, subscription) => {
+        if (subscription.status === "overdue") acc.overdue += 1;
+        if (subscription.status === "dueSoon") acc.dueSoon += 1;
+        if (subscription.status === "paidInCurrentCycle") acc.paid += 1;
+        return acc;
+      },
+      { paid: 0, dueSoon: 0, overdue: 0 }
+    );
+  }, [items]);
 
   return (
     <div
@@ -135,38 +159,13 @@ export const SubscriptionsContent = ({
         </button>
       </div>
 
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
-          gap: 8,
-          marginBottom: 12,
-        }}
-      >
-        {PERIOD_OPTIONS.map((option) => {
-          const active = periodKey === option.key;
+      <DateRangePicker
+        start={dateRange.start}
+        end={dateRange.end}
+        onChange={(start, end) => setDateRange({ start, end })}
+      />
 
-          return (
-            <button
-              key={option.key}
-              onClick={() => setPeriodKey(option.key)}
-              style={{
-                height: 34,
-                borderRadius: 8,
-                border: active ? "none" : "1px solid var(--border)",
-                background: active ? "var(--primary)" : "transparent",
-                color: active ? "#fff" : "var(--text)",
-                fontWeight: 600,
-                fontSize: 12,
-              }}
-            >
-              {option.label}
-            </button>
-          );
-        })}
-      </div>
-
-      <div style={{ ...cardStyle, marginBottom: 12 }}>
+      <SurfaceCard delay={0} style={{ marginBottom: 12 }}>
         <SummaryRow
           label="Ожидаемо в период"
           value={formatMoney(expectedInPeriod, baseCurrency)}
@@ -177,12 +176,39 @@ export const SubscriptionsContent = ({
         />
         <SummaryRow
           label="Остаток"
-          value={formatMoney(Math.max(0, expectedInPeriod - paidInPeriod), baseCurrency)}
+          value={formatMoney(
+            Math.max(0, expectedInPeriod - paidInPeriod),
+            baseCurrency
+          )}
         />
-      </div>
+      </SurfaceCard>
 
-      <div style={cardStyle}>
-        <div style={{ fontWeight: 600, marginBottom: 10 }}>Ближайшие платежи</div>
+      <SurfaceCard delay={0.05} style={{ marginBottom: 12 }}>
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
+            gap: 8,
+          }}
+        >
+          <Indicator
+            title="Оплачено"
+            value={indicators.paid}
+            tone="green"
+            icon={CheckCircle2}
+          />
+          <Indicator title="Скоро" value={indicators.dueSoon} tone="amber" icon={Clock3} />
+          <Indicator
+            title="Просрочено"
+            value={indicators.overdue}
+            tone="red"
+            icon={AlertTriangle}
+          />
+        </div>
+      </SurfaceCard>
+
+      <SurfaceCard delay={0.1}>
+        <div style={{ fontWeight: 700, marginBottom: 10 }}>Ближайшие платежи</div>
 
         {items.length === 0 && (
           <div style={{ color: "var(--text-secondary)", fontSize: 13 }}>
@@ -195,10 +221,14 @@ export const SubscriptionsContent = ({
           const accountName =
             accounts.find((account) => account.id === subscription.accountId)?.name ||
             "—";
+          const avatarText = String(subscription.name || "S").trim().charAt(0).toUpperCase();
 
           return (
-            <div
+            <motion.div
               key={subscription.id}
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.16 }}
               style={{
                 borderTop: "1px solid var(--border)",
                 padding: "10px 0",
@@ -211,12 +241,39 @@ export const SubscriptionsContent = ({
                   gap: 8,
                 }}
               >
-                <div>
-                  <div style={{ fontWeight: 600, fontSize: 14 }}>
-                    {subscription.name || "Без названия"}
+                <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
+                  <div
+                    style={{
+                      width: 28,
+                      height: 28,
+                      borderRadius: 8,
+                      display: "inline-flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      fontSize: 12,
+                      fontWeight: 700,
+                      color: status.color,
+                      background: status.bg,
+                      flexShrink: 0,
+                    }}
+                  >
+                    {avatarText}
                   </div>
-                  <div style={{ fontSize: 12, color: "var(--text-secondary)" }}>
-                    {accountName} • {subscription.cycle || "month"}
+                  <div style={{ minWidth: 0 }}>
+                    <div
+                      style={{
+                        fontWeight: 600,
+                        fontSize: 14,
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        whiteSpace: "nowrap",
+                      }}
+                    >
+                      {subscription.name || "Без названия"}
+                    </div>
+                    <div style={{ fontSize: 12, color: "var(--text-secondary)" }}>
+                      {accountName} • {subscription.cycle || "month"}
+                    </div>
                   </div>
                 </div>
 
@@ -242,7 +299,7 @@ export const SubscriptionsContent = ({
                 <div
                   style={{
                     fontSize: 11,
-                    fontWeight: 600,
+                    fontWeight: 700,
                     padding: "4px 8px",
                     borderRadius: 999,
                     color: status.color,
@@ -278,19 +335,19 @@ export const SubscriptionsContent = ({
                   </button>
                 </div>
               </div>
-            </div>
+            </motion.div>
           );
         })}
-      </div>
+      </SurfaceCard>
 
-      <div style={{ ...cardStyle, marginTop: 12 }}>
+      <SurfaceCard style={{ marginTop: 12 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <CalendarClock size={16} />
           <div style={{ fontSize: 13 }}>
             Платежи со связанной операцией автоматически получают статус "Оплачена".
           </div>
         </div>
-      </div>
+      </SurfaceCard>
     </div>
   );
 };
@@ -309,6 +366,69 @@ const SummaryRow = ({ label, value }) => (
     <span style={{ fontWeight: 700 }}>{value}</span>
   </div>
 );
+
+const Indicator = ({ title, value, tone, icon: Icon = null }) => {
+  const toneMap = {
+    green: { fg: "#166534", bg: "#dcfce7", soft: "rgba(22, 101, 52, 0.16)" },
+    amber: { fg: "#92400e", bg: "#fef3c7", soft: "rgba(146, 64, 14, 0.16)" },
+    red: { fg: "#991b1b", bg: "#fee2e2", soft: "rgba(153, 27, 27, 0.16)" },
+  };
+  const color = toneMap[tone] || toneMap.green;
+
+  return (
+    <div
+      style={{
+        borderRadius: 8,
+        border: "1px solid var(--border)",
+        padding: 8,
+        background: "linear-gradient(135deg, rgba(255,255,255,0.95), rgba(248,250,252,0.95))",
+      }}
+    >
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          marginBottom: 4,
+        }}
+      >
+        <div style={{ fontSize: 11, color: "var(--text-secondary)" }}>{title}</div>
+        <span
+          style={{
+            width: 18,
+            height: 18,
+            borderRadius: 6,
+            display: "inline-flex",
+            alignItems: "center",
+            justifyContent: "center",
+            color: color.fg,
+            background: color.soft,
+          }}
+        >
+          {Icon ? <Icon size={11} /> : null}
+        </span>
+      </div>
+      <div
+        style={{
+          display: "inline-flex",
+          alignItems: "center",
+          justifyContent: "center",
+          minWidth: 24,
+          height: 20,
+          borderRadius: 999,
+          padding: "0 8px",
+          fontSize: 11,
+          fontWeight: 700,
+          color: color.fg,
+          background: color.bg,
+          transition: "all 0.2s ease",
+        }}
+      >
+        {value}
+      </div>
+    </div>
+  );
+};
 
 const iconBtnStyle = {
   width: 30,

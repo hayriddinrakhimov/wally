@@ -1,6 +1,6 @@
 ﻿import { getCategory } from "../utils/getCategory";
 import { getTransactionColor } from "../utils/getTransactionColor";
-import { formatMoney } from "../utils/formatMoney";
+import { formatMoneySmart } from "../utils/formatMoney";
 
 export const TransactionsList = ({
   transactions = [],
@@ -48,6 +48,8 @@ export const TransactionsList = ({
 
         const category = getCategory(categoryId);
         const isTransfer = transaction.type === "transfer";
+        const categoryBadge = isTransfer ? "🔄" : category?.icon || "✨";
+        const amountLabel = formatMoneySmart(transaction.amount, transaction.currency || "KZT");
 
         const typeLabel = getTypeLabel(transaction.type);
 
@@ -78,7 +80,7 @@ export const TransactionsList = ({
                   color: "var(--text)",
                 }}
               >
-                {title}
+                {categoryBadge} {title}
               </div>
 
               <div
@@ -111,12 +113,16 @@ export const TransactionsList = ({
                 style={{
                   fontWeight: 700,
                   color: getTransactionColor(transaction.type),
+                  maxWidth: 140,
+                  whiteSpace: "nowrap",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
                 }}
               >
                 {transaction.type === "income" && "+"}
                 {transaction.type === "expense" && "-"}
                 {transaction.type === "transfer" && "-"}{" "}
-                {formatMoney(transaction.amount, transaction.currency || "KZT")}
+                {amountLabel}
               </div>
 
               <div

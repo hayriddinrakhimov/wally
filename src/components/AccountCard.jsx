@@ -1,6 +1,9 @@
 import { Pencil } from "lucide-react";
+import { useCurrency } from "../context/useCurrency";
+import { formatMoneySmart } from "../utils/formatMoney";
 
-export const AccountCard = ({ account, onEdit }) => {
+export const AccountCard = ({ account, onEdit, isActive = false }) => {
+  const { convert, baseCurrency } = useCurrency();
   const gradients = {
     blue: "linear-gradient(135deg, #3b82f6, #1e293b)",
     green: "linear-gradient(135deg, #22c55e, #1e293b)",
@@ -15,6 +18,11 @@ export const AccountCard = ({ account, onEdit }) => {
   };
 
   const bg = gradients[account.color] || gradients.blue;
+  const amountLabel = formatMoneySmart(account.balance, account.currency || "KZT");
+  const converted = convert(account.balance, account.currency, baseCurrency);
+  const showConverted = account.currency !== baseCurrency;
+  const amountLength = amountLabel.length;
+  const amountFontSize = amountLength > 16 ? 22 : amountLength > 12 ? 24 : 28;
 
   return (
     <div
@@ -29,6 +37,8 @@ export const AccountCard = ({ account, onEdit }) => {
         display: "flex",
         flexDirection: "column",
         justifyContent: "space-between",
+        border: isActive ? "1px solid rgba(255,255,255,0.35)" : "1px solid transparent",
+        boxShadow: isActive ? "0 10px 24px rgba(15, 23, 42, 0.28)" : "none",
       }}
     >
       {/* ✏️ КНОПКА РЕДАКТИРОВАНИЯ */}
@@ -57,19 +67,29 @@ export const AccountCard = ({ account, onEdit }) => {
 
       {/* КОНТЕНТ */}
       <div>
-        <div style={{ opacity: 0.85 }}>
+        <div style={{ opacity: 0.9, fontSize: 13, lineHeight: 1.25 }}>
           {account.name} • {account.currency}
         </div>
 
         <div
           style={{
-            fontSize: 28,
+            fontSize: amountFontSize,
             fontWeight: 700,
-            marginTop: 10,
+            marginTop: 8,
+            lineHeight: 1.2,
+            whiteSpace: "nowrap",
+            overflow: "hidden",
+            textOverflow: "ellipsis",
           }}
         >
-          {account.balance} {getCurrencySymbol(account.currency)}
+          {amountLabel}
         </div>
+
+        {showConverted && (
+          <div style={{ marginTop: 4, fontSize: 12, opacity: 0.85 }}>
+            ≈ {formatMoneySmart(converted, baseCurrency)}
+          </div>
+        )}
       </div>
 
       <div style={{ fontSize: 12, opacity: 0.7 }}>
@@ -83,7 +103,7 @@ export const AccountCard = ({ account, onEdit }) => {
   );
 };
 
-function getCurrencySymbol(currency) {
+export function getCurrencySymbol(currency) {
   switch (currency) {
     case "USD":
       return "$";
