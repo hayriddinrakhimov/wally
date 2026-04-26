@@ -1,4 +1,4 @@
-import {
+﻿import {
   AlertTriangle,
   CalendarClock,
   CheckCircle2,
@@ -23,11 +23,11 @@ import { DateRangePicker } from "./common/DateRangePicker";
 import { SurfaceCard } from "./common/SurfaceCard";
 
 const STATUS_META = {
-  active: { label: "Активна", color: "#334155", bg: "#f1f5f9" },
-  dueSoon: { label: "Скоро платеж", color: "#92400e", bg: "#fef3c7" },
-  overdue: { label: "Просрочена", color: "#991b1b", bg: "#fee2e2" },
-  paidInCurrentCycle: { label: "Оплачена", color: "#166534", bg: "#dcfce7" },
-  inactive: { label: "В архиве", color: "#6b7280", bg: "#f3f4f6" },
+  active: { label: "РђРєС‚РёРІРЅР°", color: "#334155", bg: "#f1f5f9" },
+  dueSoon: { label: "РЎРєРѕСЂРѕ РїР»Р°С‚РµР¶", color: "#92400e", bg: "#fef3c7" },
+  overdue: { label: "РџСЂРѕСЃСЂРѕС‡РµРЅР°", color: "#991b1b", bg: "#fee2e2" },
+  paidInCurrentCycle: { label: "РћРїР»Р°С‡РµРЅР°", color: "#166534", bg: "#dcfce7" },
+  inactive: { label: "Р’ Р°СЂС…РёРІРµ", color: "#6b7280", bg: "#f3f4f6" },
 };
 
 const getOccurrencesInRange = (subscription, start, end) => {
@@ -130,18 +130,10 @@ export const SubscriptionsContent = ({
       <div
         style={{
           display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          marginBottom: 12,
+          justifyContent: "flex-end",
+          marginBottom: 10,
         }}
       >
-        <div>
-          <div style={{ fontSize: 18, fontWeight: 700 }}>Подписки</div>
-          <div style={{ fontSize: 12, color: "var(--text-secondary)" }}>
-            Регулярные платежи и напоминания
-          </div>
-        </div>
-
         <button
           onClick={onCreate}
           style={{
@@ -167,15 +159,15 @@ export const SubscriptionsContent = ({
 
       <SurfaceCard delay={0} style={{ marginBottom: 12 }}>
         <SummaryRow
-          label="Ожидаемо в период"
+          label="РћР¶РёРґР°РµРјРѕ РІ РїРµСЂРёРѕРґ"
           value={formatMoney(expectedInPeriod, baseCurrency)}
         />
         <SummaryRow
-          label="Оплачено в период"
+          label="РћРїР»Р°С‡РµРЅРѕ РІ РїРµСЂРёРѕРґ"
           value={formatMoney(paidInPeriod, baseCurrency)}
         />
         <SummaryRow
-          label="Остаток"
+          label="РћСЃС‚Р°С‚РѕРє"
           value={formatMoney(
             Math.max(0, expectedInPeriod - paidInPeriod),
             baseCurrency
@@ -192,14 +184,14 @@ export const SubscriptionsContent = ({
           }}
         >
           <Indicator
-            title="Оплачено"
+            title="РћРїР»Р°С‡РµРЅРѕ"
             value={indicators.paid}
             tone="green"
             icon={CheckCircle2}
           />
-          <Indicator title="Скоро" value={indicators.dueSoon} tone="amber" icon={Clock3} />
+          <Indicator title="РЎРєРѕСЂРѕ" value={indicators.dueSoon} tone="amber" icon={Clock3} />
           <Indicator
-            title="Просрочено"
+            title="РџСЂРѕСЃСЂРѕС‡РµРЅРѕ"
             value={indicators.overdue}
             tone="red"
             icon={AlertTriangle}
@@ -208,11 +200,11 @@ export const SubscriptionsContent = ({
       </SurfaceCard>
 
       <SurfaceCard delay={0.1}>
-        <div style={{ fontWeight: 700, marginBottom: 10 }}>Ближайшие платежи</div>
+        <div style={{ fontWeight: 700, marginBottom: 10 }}>Р‘Р»РёР¶Р°Р№С€РёРµ РїР»Р°С‚РµР¶Рё</div>
 
         {items.length === 0 && (
           <div style={{ color: "var(--text-secondary)", fontSize: 13 }}>
-            Пока нет подписок
+            РџРѕРєР° РЅРµС‚ РїРѕРґРїРёСЃРѕРє
           </div>
         )}
 
@@ -220,7 +212,7 @@ export const SubscriptionsContent = ({
           const status = STATUS_META[subscription.status] || STATUS_META.active;
           const accountName =
             accounts.find((account) => account.id === subscription.accountId)?.name ||
-            "—";
+            "вЂ”";
           const avatarText = String(subscription.name || "S").trim().charAt(0).toUpperCase();
 
           return (
@@ -269,10 +261,10 @@ export const SubscriptionsContent = ({
                         whiteSpace: "nowrap",
                       }}
                     >
-                      {subscription.name || "Без названия"}
+                      {subscription.name || "Р‘РµР· РЅР°Р·РІР°РЅРёСЏ"}
                     </div>
                     <div style={{ fontSize: 12, color: "var(--text-secondary)" }}>
-                      {accountName} • {subscription.cycle || "month"}
+                      {accountName} вЂў {subscription.cycle || "month"}
                     </div>
                   </div>
                 </div>
@@ -313,7 +305,7 @@ export const SubscriptionsContent = ({
                 <div style={{ display: "flex", gap: 6 }}>
                   <button
                     onClick={() => onMarkPaid(subscription)}
-                    title="Отметить оплату"
+                    title="РћС‚РјРµС‚РёС‚СЊ РѕРїР»Р°С‚Сѓ"
                     style={iconBtnStyle}
                     disabled={!subscription.isActive}
                   >
@@ -321,14 +313,14 @@ export const SubscriptionsContent = ({
                   </button>
                   <button
                     onClick={() => onEdit(subscription)}
-                    title="Редактировать"
+                    title="Р РµРґР°РєС‚РёСЂРѕРІР°С‚СЊ"
                     style={iconBtnStyle}
                   >
                     <Pencil size={14} />
                   </button>
                   <button
                     onClick={() => onArchive(subscription)}
-                    title="В архив"
+                    title="Р’ Р°СЂС…РёРІ"
                     style={iconBtnStyle}
                   >
                     <Trash2 size={14} />
@@ -344,7 +336,7 @@ export const SubscriptionsContent = ({
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <CalendarClock size={16} />
           <div style={{ fontSize: 13 }}>
-            Платежи со связанной операцией автоматически получают статус "Оплачена".
+            РџР»Р°С‚РµР¶Рё СЃРѕ СЃРІСЏР·Р°РЅРЅРѕР№ РѕРїРµСЂР°С†РёРµР№ Р°РІС‚РѕРјР°С‚РёС‡РµСЃРєРё РїРѕР»СѓС‡Р°СЋС‚ СЃС‚Р°С‚СѓСЃ "РћРїР»Р°С‡РµРЅР°".
           </div>
         </div>
       </SurfaceCard>

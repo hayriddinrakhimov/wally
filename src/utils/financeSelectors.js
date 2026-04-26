@@ -1,11 +1,42 @@
-import { DAY_MS, endOfDay, isInRange, startOfDay } from "./dateRanges";
+﻿import { DAY_MS, endOfDay, isInRange, startOfDay } from "./dateRanges";
 
-const CATEGORY_NAMES = {
+const BASE_CATEGORY_NAMES = {
   food: "Еда",
   salary: "Зарплата",
   transport: "Транспорт",
+  taxi: "Такси",
   transfer: "Перевод",
   uncategorized: "Без категории",
+};
+
+const getCategoryNameMap = () => {
+  const categoryNames = { ...BASE_CATEGORY_NAMES };
+
+  if (typeof window === "undefined") return categoryNames;
+
+  try {
+    const raw = window.localStorage.getItem("categories_v3");
+    if (!raw) return categoryNames;
+
+    const parsed = JSON.parse(raw);
+    ["expense", "income"].forEach((type) => {
+      (parsed?.[type] || []).forEach((category) => {
+        const key = String(category?.key || "").trim();
+        const label = String(category?.label || "").trim();
+        if (!key || !label) return;
+        categoryNames[key] = label;
+      });
+    });
+
+    return categoryNames;
+  } catch {
+    return categoryNames;
+  }
+};
+
+const resolveCategoryLabel = (id, categoryNames) => {
+  if (!id) return BASE_CATEGORY_NAMES.uncategorized;
+  return categoryNames[id] || id;
 };
 
 export const CYCLE_OPTIONS = [
@@ -21,9 +52,9 @@ export const GOAL_FREQUENCY_OPTIONS = [
 
 export const getCategoryLabel = (transaction) => {
   const id = transaction?.categoryId || transaction?.category || "";
-  if (!id) return "Без категории";
+  const categoryNames = getCategoryNameMap();
 
-  return CATEGORY_NAMES[id] || id;
+  return resolveCategoryLabel(id, categoryNames);
 };
 
 export const filterTransactionsByRange = (transactions, start, end) => {
@@ -66,6 +97,7 @@ export const getKpiTotals = (transactions, convert, baseCurrency) => {
 
 export const getExpenseByCategory = (transactions, convert, baseCurrency) => {
   const map = new Map();
+  const categoryNames = getCategoryNameMap();
 
   transactions.forEach((tx) => {
     if (tx.type !== "expense") return;
@@ -80,7 +112,7 @@ export const getExpenseByCategory = (transactions, convert, baseCurrency) => {
   return Array.from(map.entries())
     .map(([id, value]) => ({
       id,
-      label: CATEGORY_NAMES[id] || id,
+      label: resolveCategoryLabel(id, categoryNames),
       value,
     }))
     .sort((a, b) => b.value - a.value);
@@ -94,6 +126,7 @@ export const getCategoryComparison = (
 ) => {
   const currentMap = new Map();
   const previousMap = new Map();
+  const categoryNames = getCategoryNameMap();
 
   const collect = (list, target) => {
     list.forEach((tx) => {
@@ -113,7 +146,7 @@ export const getCategoryComparison = (
   return Array.from(ids)
     .map((id) => ({
       id,
-      label: CATEGORY_NAMES[id] || id,
+      label: resolveCategoryLabel(id, categoryNames),
       current: currentMap.get(id) || 0,
       previous: previousMap.get(id) || 0,
     }))
@@ -266,9 +299,13 @@ export const getGoalProgress = (
 
   const progressAmount = Math.max(0, current);
   const safeTarget = Math.max(0, Number(target) || 0);
-  const percent = safeTarget > 0 ? Math.min(100, (progressAmount / safeTarget) * 100) : 0;
+  const percent =
+    safeTarget > 0 ? Math.min(100, (progressAmount / safeTarget) * 100) : 0;
   const remaining = Math.max(0, safeTarget - progressAmount);
-  const daysLeft = Math.max(0, Math.ceil((safeTargetDate - startOfDay(now)) / DAY_MS));
+  const daysLeft = Math.max(
+    0,
+    Math.ceil((safeTargetDate - startOfDay(now)) / DAY_MS)
+  );
 
   const frequencyDays = goal?.frequency === "week" ? 7 : 30;
   const periodsLeft = Math.max(1, Math.ceil(daysLeft / frequencyDays));

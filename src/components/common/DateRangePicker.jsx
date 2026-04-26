@@ -1,22 +1,32 @@
-import { CalendarDays, RotateCcw } from "lucide-react";
-import { formatDateInput, getCurrentMonthRange, parseDateInput } from "../../utils/dateRanges";
+﻿import { CalendarDays, RotateCcw } from "lucide-react";
+import {
+  formatDateInput,
+  getCurrentMonthRange,
+  parseDateInput,
+} from "../../utils/dateRanges";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 export const DateRangePicker = ({ start, end, onChange }) => {
   const startValue = Number(start);
   const endValue = Number(end);
+
   const normalizedStart = Number.isFinite(startValue)
     ? startValue
     : Number.isFinite(endValue)
     ? endValue
     : 0;
+
   const normalizedEnd = Number.isFinite(endValue)
     ? endValue
     : Number.isFinite(startValue)
     ? startValue
     : normalizedStart;
-  const spanDays = Math.max(1, Math.floor((normalizedEnd - normalizedStart) / DAY_MS) + 1);
+
+  const spanDays = Math.max(
+    1,
+    Math.floor((normalizedEnd - normalizedStart) / DAY_MS) + 1
+  );
 
   const handleStartChange = (value) => {
     const nextStart = parseDateInput(value, start);
@@ -39,8 +49,8 @@ export const DateRangePicker = ({ start, end, onChange }) => {
     <div
       style={{
         border: "1px solid var(--border)",
-        borderRadius: 10,
-        background: "var(--bg)",
+        borderRadius: 14,
+        background: "linear-gradient(145deg, #ffffff 0%, #f8fafc 100%)",
         padding: 10,
         marginBottom: 12,
       }}
@@ -51,11 +61,27 @@ export const DateRangePicker = ({ start, end, onChange }) => {
           alignItems: "center",
           justifyContent: "space-between",
           marginBottom: 8,
+          gap: 8,
+          flexWrap: "wrap",
         }}
       >
-        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-          <CalendarDays size={14} />
-          <span style={{ fontSize: 12, fontWeight: 600 }}>Период</span>
+        <div style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+          <span
+            style={{
+              width: 22,
+              height: 22,
+              borderRadius: 7,
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              background: "rgba(59, 130, 246, 0.12)",
+              color: "#1d4ed8",
+            }}
+          >
+            <CalendarDays size={13} />
+          </span>
+
+          <span style={{ fontSize: 12, fontWeight: 700 }}>Период</span>
         </div>
 
         <div style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
@@ -68,6 +94,7 @@ export const DateRangePicker = ({ start, end, onChange }) => {
               height: 24,
               borderRadius: 999,
               border: "1px solid var(--border)",
+              background: "rgba(255,255,255,0.85)",
               display: "inline-flex",
               alignItems: "center",
             }}
@@ -75,9 +102,9 @@ export const DateRangePicker = ({ start, end, onChange }) => {
             {spanDays} дн.
           </span>
 
-          <button onClick={applyCurrentMonth} style={resetBtnStyle}>
+          <button type="button" onClick={applyCurrentMonth} style={resetBtnStyle}>
             <RotateCcw size={12} />
-            Текущий месяц
+            Этот месяц
           </button>
         </div>
       </div>
@@ -98,6 +125,7 @@ export const DateRangePicker = ({ start, end, onChange }) => {
             style={inputStyle}
           />
         </label>
+
         <label style={{ display: "flex", flexDirection: "column", gap: 4, fontSize: 11 }}>
           По
           <input
@@ -115,7 +143,7 @@ export const DateRangePicker = ({ start, end, onChange }) => {
 const inputStyle = {
   width: "100%",
   height: 34,
-  borderRadius: 8,
+  borderRadius: 9,
   border: "1px solid var(--border)",
   background: "var(--bg)",
   padding: "0 8px",
@@ -125,12 +153,13 @@ const inputStyle = {
 
 const resetBtnStyle = {
   height: 28,
-  borderRadius: 7,
+  borderRadius: 8,
   border: "1px solid var(--border)",
   display: "inline-flex",
   alignItems: "center",
   gap: 4,
   padding: "0 8px",
   fontSize: 11,
-  fontWeight: 600,
+  fontWeight: 700,
+  background: "rgba(255,255,255,0.9)",
 };

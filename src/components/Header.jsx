@@ -6,6 +6,8 @@ export const Header = ({
   onOpenNotifications,
   hasUnread,
   disabled,
+  title = "Wally",
+  subtitle = "Ваш личный кошелек",
 }) => {
   const theme = useTheme() || {};
 
@@ -55,7 +57,7 @@ export const Header = ({
               lineHeight: 1,
             }}
           >
-            Wally
+            {title}
           </span>
 
           <span
@@ -65,7 +67,7 @@ export const Header = ({
               marginTop: 2,
             }}
           >
-            Ваш личный кошелек
+            {subtitle}
           </span>
         </div>
       </div>

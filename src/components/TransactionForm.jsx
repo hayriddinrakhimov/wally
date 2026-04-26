@@ -1,6 +1,5 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
-// eslint-disable-next-line no-unused-vars
-import { motion } from "framer-motion";
+﻿import { useCallback, useEffect, useMemo, useState } from "react";
+import { motion as Motion } from "framer-motion";
 import { useLocalStorage } from "../hooks/useLocalStorage";
 import { useCurrency } from "../context/useCurrency";
 import { formatMoneySmart } from "../utils/formatMoney";
@@ -16,52 +15,66 @@ import {
   ShoppingCart,
   Sparkles,
   Wallet,
+  X,
 } from "lucide-react";
 
-const ICON_KEYWORDS = [
-  { keys: ["еда", "food", "продукт"], icon: ShoppingCart },
-  { keys: ["кофе", "cafe", "coffee"], icon: Coffee },
-  { keys: ["такси", "машин", "car", "транспорт"], icon: Car },
-  { keys: ["зарплата", "income", "salary"], icon: Wallet },
-  { keys: ["подарок", "gift"], icon: Gift },
-  { keys: ["дом", "аренда", "home", "rent"], icon: Home },
-  { keys: ["игра", "fun", "game"], icon: Gamepad2 },
-  { keys: ["здоров", "health"], icon: Heart },
-];
+const ICON_KEY_DEFAULT = "sparkles";
 
-const getIcon = (label = "") => {
-  const text = label.toLowerCase();
-  for (const item of ICON_KEYWORDS) {
-    if (item.keys.some((key) => text.includes(key))) {
-      return item.icon;
-    }
-  }
-  return Sparkles;
-};
+const ICON_KEYWORDS = [
+  { keys: ["еда", "продукт", "продукты", "food", "grocery", "meal"], key: "shopping" },
+  { keys: ["кофе", "кафе", "coffee", "cafe"], key: "coffee" },
+  {
+    keys: ["такси", "машин", "бензин", "транспорт", "car", "taxi", "fuel", "bus"],
+    key: "car",
+  },
+  { keys: ["зарплат", "доход", "income", "salary", "work"], key: "wallet" },
+  { keys: ["подар", "gift", "present"], key: "gift" },
+  { keys: ["дом", "аренд", "home", "rent", "flat"], key: "home" },
+  { keys: ["игр", "развлеч", "fun", "game", "play"], key: "game" },
+  { keys: ["здоров", "мед", "doctor", "medical", "health"], key: "health" },
+];
 
 const ICON_OPTIONS = [
-  { key: "shopping", icon: ShoppingCart },
-  { key: "coffee", icon: Coffee },
-  { key: "car", icon: Car },
-  { key: "wallet", icon: Wallet },
-  { key: "gift", icon: Gift },
-  { key: "home", icon: Home },
-  { key: "game", icon: Gamepad2 },
-  { key: "health", icon: Heart },
-  { key: "sparkles", icon: Sparkles },
+  { key: "shopping", icon: ShoppingCart, label: "Еда" },
+  { key: "coffee", icon: Coffee, label: "Кофе" },
+  { key: "car", icon: Car, label: "Транспорт" },
+  { key: "wallet", icon: Wallet, label: "Доход" },
+  { key: "gift", icon: Gift, label: "Подарки" },
+  { key: "home", icon: Home, label: "Дом" },
+  { key: "game", icon: Gamepad2, label: "Досуг" },
+  { key: "health", icon: Heart, label: "Здоровье" },
+  { key: "sparkles", icon: Sparkles, label: "Другое" },
 ];
+
+const ICON_BY_KEY = ICON_OPTIONS.reduce((acc, option) => {
+  acc[option.key] = option.icon;
+  return acc;
+}, {});
+
+const getSuggestedIconKey = (label = "") => {
+  const text = String(label).toLowerCase().trim();
+  if (!text) return ICON_KEY_DEFAULT;
+
+  const matched = ICON_KEYWORDS.find((item) =>
+    item.keys.some((key) => text.includes(key))
+  );
+
+  return matched?.key || ICON_KEY_DEFAULT;
+};
 
 const resolveCategoryIcon = (category) => {
   const iconKey = String(category?.iconKey || "").trim();
-  const fromKey = ICON_OPTIONS.find((item) => item.key === iconKey);
-  if (fromKey) return fromKey.icon;
+  if (iconKey && ICON_BY_KEY[iconKey]) return ICON_BY_KEY[iconKey];
 
-  return getIcon(`${category?.label || ""} ${category?.key || ""}`);
+  const fallbackKey = getSuggestedIconKey(
+    `${category?.label || ""} ${category?.key || ""}`
+  );
+  return ICON_BY_KEY[fallbackKey] || Sparkles;
 };
 
 const formatNumber = (value) => {
   if (!value) return "";
-  const numeric = value.replace(/\D/g, "");
+  const numeric = String(value).replace(/\D/g, "");
   return numeric.replace(/\B(?=(\d{3})+(?!\d))/g, " ");
 };
 
@@ -71,10 +84,12 @@ const COLORS = ["#60a5fa", "#34d399", "#f59e0b", "#f472b6", "#a78bfa"];
 
 const defaultCategories = {
   expense: [
-    { key: "food", label: "Еда", color: "#60a5fa" },
-    { key: "taxi", label: "Такси", color: "#f59e0b" },
+    { key: "food", label: "Еда", color: "#60a5fa", iconKey: "shopping" },
+    { key: "taxi", label: "Такси", color: "#f59e0b", iconKey: "car" },
   ],
-  income: [{ key: "salary", label: "Зарплата", color: "#22c55e" }],
+  income: [
+    { key: "salary", label: "Зарплата", color: "#22c55e", iconKey: "wallet" },
+  ],
 };
 
 export const TransactionForm = ({
@@ -93,7 +108,8 @@ export const TransactionForm = ({
 
   const [adding, setAdding] = useState(false);
   const [newCategory, setNewCategory] = useState("");
-  const [newCategoryIconKey, setNewCategoryIconKey] = useState("sparkles");
+  const [newCategoryIconKey, setNewCategoryIconKey] = useState(ICON_KEY_DEFAULT);
+  const [isIconManual, setIsIconManual] = useState(false);
 
   const currentCategories = useMemo(
     () => (type === "transfer" ? [] : categories[type] || []),
@@ -128,7 +144,8 @@ export const TransactionForm = ({
     const accountCurrency =
       accounts.find(
         (account) =>
-          account.id === (draft.from || draft.fromAccountId || draft.to || draft.toAccountId)
+          account.id ===
+          (draft.from || draft.fromAccountId || draft.to || draft.toAccountId)
       )?.currency || baseCurrency;
 
     return accountCurrency || "KZT";
@@ -137,12 +154,32 @@ export const TransactionForm = ({
   const fromValue = accounts.some((account) => account.id === from)
     ? from
     : defaultFrom;
-  const toValue = accounts.some((account) => account.id === to) ? to : defaultTo;
+
+  const rawToValue = accounts.some((account) => account.id === to) ? to : defaultTo;
+
+  const toValue = useMemo(() => {
+    if (type !== "transfer" || accounts.length < 2) return rawToValue;
+    if (!fromValue || fromValue !== rawToValue) return rawToValue;
+
+    return accounts.find((account) => account.id !== fromValue)?.id || rawToValue;
+  }, [type, accounts, fromValue, rawToValue]);
 
   const currencyOptions = useMemo(() => {
     const set = new Set([baseCurrency, ...(watchlist || []), currency, "KZT"]);
     return Array.from(set).filter(Boolean);
   }, [baseCurrency, watchlist, currency]);
+
+  const resolvedCategoryId = useMemo(() => {
+    if (type === "transfer") return "transfer";
+    if (!currentCategories.length) return null;
+
+    if (categoryId && currentCategories.some((item) => item.key === categoryId)) {
+      return categoryId;
+    }
+
+    return currentCategories[0].key;
+  }, [type, currentCategories, categoryId]);
+
   const amountDigits = String(amount || "").replace(/\D/g, "").length;
   const amountFontSize = amountDigits > 12 ? 24 : amountDigits > 9 ? 28 : 32;
   const parsedAmount = parseNumber(amount);
@@ -150,24 +187,37 @@ export const TransactionForm = ({
   const showAmountInBase =
     parsedAmount > 0 && currency && baseCurrency && currency !== baseCurrency;
 
-  useEffect(() => {
-    if (type === "transfer") {
-      if (categoryId !== "transfer") {
-        setCategoryId("transfer");
+  const newCategoryLabel = newCategory.trim();
+  const canSaveCategory = Boolean(newCategoryLabel);
+
+  const closeAddCategory = useCallback(() => {
+    setAdding(false);
+    setNewCategory("");
+    setNewCategoryIconKey(ICON_KEY_DEFAULT);
+    setIsIconManual(false);
+  }, []);
+
+  const openAddCategory = useCallback(() => {
+    setAdding(true);
+    setNewCategory("");
+    setNewCategoryIconKey(ICON_KEY_DEFAULT);
+    setIsIconManual(false);
+  }, []);
+
+  const selectCategoryIcon = useCallback((iconKey) => {
+    setNewCategoryIconKey(iconKey);
+    setIsIconManual(true);
+  }, []);
+
+  const handleCategoryNameChange = useCallback(
+    (nextValue) => {
+      setNewCategory(nextValue);
+      if (!isIconManual) {
+        setNewCategoryIconKey(getSuggestedIconKey(nextValue));
       }
-      return;
-    }
-
-    if (!currentCategories.length) {
-      setCategoryId(null);
-      return;
-    }
-
-    const hasSelected = currentCategories.some((item) => item.key === categoryId);
-    if (!hasSelected) {
-      setCategoryId(currentCategories[0].key);
-    }
-  }, [type, currentCategories, categoryId]);
+    },
+    [isIconManual]
+  );
 
   const handleSubmit = useCallback(() => {
     if (typeof onSubmit !== "function") return;
@@ -176,11 +226,12 @@ export const TransactionForm = ({
     if (!numericAmount) return;
 
     const normalizedCategoryId =
-      type === "transfer"
-        ? "transfer"
-        : categoryId || currentCategories[0]?.key || null;
+      type === "transfer" ? "transfer" : resolvedCategoryId;
 
     if (type !== "transfer" && !normalizedCategoryId) return;
+    if (type === "transfer" && (!fromValue || !toValue || fromValue === toValue)) {
+      return;
+    }
 
     const transaction = {
       id: Date.now().toString(),
@@ -208,8 +259,7 @@ export const TransactionForm = ({
     amount,
     type,
     currency,
-    categoryId,
-    currentCategories,
+    resolvedCategoryId,
     note,
     fromValue,
     toValue,
@@ -226,14 +276,27 @@ export const TransactionForm = ({
   }, [handleSubmit]);
 
   const addCategory = () => {
-    const normalizedLabel = newCategory.trim();
+    const normalizedLabel = newCategoryLabel;
     if (!normalizedLabel || type === "transfer") return;
+
+    const existingCategory = currentCategories.find(
+      (category) =>
+        String(category.label || "")
+          .trim()
+          .toLowerCase() === normalizedLabel.toLowerCase()
+    );
+
+    if (existingCategory) {
+      setCategoryId(existingCategory.key);
+      closeAddCategory();
+      return;
+    }
 
     const newCat = {
       key: Date.now().toString(),
       label: normalizedLabel,
       color: COLORS[Math.floor(Math.random() * COLORS.length)],
-      iconKey: newCategoryIconKey,
+      iconKey: newCategoryIconKey || getSuggestedIconKey(normalizedLabel),
     };
 
     setCategories((prev) => ({
@@ -242,9 +305,7 @@ export const TransactionForm = ({
     }));
 
     setCategoryId(newCat.key);
-    setNewCategory("");
-    setNewCategoryIconKey("sparkles");
-    setAdding(false);
+    closeAddCategory();
   };
 
   const activeSubscriptions = subscriptions.filter(
@@ -316,15 +377,16 @@ export const TransactionForm = ({
       )}
 
       {type !== "transfer" && (
-        <div style={{ display: "flex", gap: 8, overflowX: "auto" }}>
+        <div style={{ display: "flex", gap: 8, overflowX: "auto", paddingBottom: 2 }}>
           {currentCategories.map((category) => {
             const Icon = resolveCategoryIcon(category);
-            const active = categoryId === category.key;
+            const active = resolvedCategoryId === category.key;
 
             return (
-              <motion.div
+              <Motion.button
                 key={category.key}
-                whileTap={{ scale: 0.9 }}
+                type="button"
+                whileTap={{ scale: 0.94 }}
                 onClick={() => setCategoryId(category.key)}
                 style={{
                   display: "flex",
@@ -333,82 +395,156 @@ export const TransactionForm = ({
                   padding: "10px 14px",
                   borderRadius: 14,
                   cursor: "pointer",
+                  border: "none",
                   background: active ? category.color : `${category.color}22`,
-                  color: active ? "#fff" : "#000",
+                  color: active ? "#fff" : "var(--text)",
                   maxWidth: 170,
                   whiteSpace: "nowrap",
                   overflow: "hidden",
                   textOverflow: "ellipsis",
                   flexShrink: 0,
+                  fontWeight: 600,
                 }}
               >
                 <Icon size={16} />
                 {category.label}
-              </motion.div>
+              </Motion.button>
             );
           })}
 
           <button
             type="button"
-            onClick={() => setAdding(true)}
+            onClick={() => (adding ? closeAddCategory() : openAddCategory())}
             style={{
               width: 36,
               height: 36,
               borderRadius: 10,
               border: "1px dashed var(--border)",
-              background: "transparent",
+              background: adding ? "var(--primary)" : "transparent",
+              color: adding ? "#fff" : "var(--text-secondary)",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
+              flexShrink: 0,
+              transition: "all 0.2s ease",
             }}
           >
-            <Plus size={16} />
+            <Motion.span
+              animate={{ rotate: adding ? 45 : 0 }}
+              transition={{ duration: 0.2 }}
+              style={{ display: "inline-flex" }}
+            >
+              <Plus size={16} />
+            </Motion.span>
           </button>
         </div>
       )}
 
-      {adding && (
-        <div
+      {adding && type !== "transfer" && (
+        <Motion.div
+          initial={{ opacity: 0, y: -6 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.2 }}
           style={{
-            display: "flex",
-            alignItems: "center",
             borderRadius: 16,
             padding: "10px 12px",
             background: "var(--card)",
             border: "1px solid var(--border)",
-            gap: 8,
+            display: "flex",
+            flexDirection: "column",
+            gap: 10,
           }}
         >
-          <input
-            value={newCategory}
-            onChange={(event) => setNewCategory(event.target.value)}
-            placeholder="Новая категория"
-            style={{
-              flex: 1,
-              border: "none",
-              outline: "none",
-              background: "transparent",
-            }}
-          />
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <input
+              value={newCategory}
+              onChange={(event) => handleCategoryNameChange(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === "Enter") addCategory();
+                if (event.key === "Escape") closeAddCategory();
+              }}
+              placeholder="Новая категория"
+              style={{
+                flex: 1,
+                border: "none",
+                outline: "none",
+                background: "transparent",
+              }}
+            />
 
-          <button
-            type="button"
-            onClick={addCategory}
-            style={{
-              width: 36,
-              height: 36,
-              borderRadius: 10,
-              border: "none",
-              background: "var(--primary)",
-              color: "#fff",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-          >
-            <Check size={16} />
-          </button>
-        </div>
+            <button
+              type="button"
+              onClick={closeAddCategory}
+              style={{
+                width: 34,
+                height: 34,
+                borderRadius: 10,
+                border: "1px solid var(--border)",
+                background: "transparent",
+                color: "var(--text-secondary)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <X size={15} />
+            </button>
+
+            <button
+              type="button"
+              onClick={addCategory}
+              disabled={!canSaveCategory}
+              style={{
+                width: 34,
+                height: 34,
+                borderRadius: 10,
+                border: "none",
+                background: "var(--primary)",
+                color: "#fff",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                opacity: canSaveCategory ? 1 : 0.45,
+              }}
+            >
+              <Check size={15} />
+            </button>
+          </div>
+
+          <div style={{ display: "flex", gap: 8, overflowX: "auto", paddingBottom: 2 }}>
+            {ICON_OPTIONS.map((item) => {
+              const Icon = item.icon;
+              const active = newCategoryIconKey === item.key;
+
+              return (
+                <button
+                  key={item.key}
+                  type="button"
+                  onClick={() => selectCategoryIcon(item.key)}
+                  style={{
+                    minWidth: 74,
+                    height: 54,
+                    borderRadius: 12,
+                    border: active ? "1px solid var(--primary)" : "1px solid var(--border)",
+                    background: active ? "rgba(59, 130, 246, 0.12)" : "var(--bg)",
+                    color: active ? "var(--primary)" : "var(--text-secondary)",
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: 4,
+                    fontSize: 10,
+                    flexShrink: 0,
+                    fontWeight: 600,
+                  }}
+                >
+                  <Icon size={16} />
+                  <span>{item.label}</span>
+                </button>
+              );
+            })}
+          </div>
+        </Motion.div>
       )}
 
       <input
@@ -510,7 +646,7 @@ const AccountCard = ({ label, value, setValue, accounts }) => {
   }
 
   return (
-    <motion.div
+    <Motion.div
       whileTap={{ scale: 0.97 }}
       onClick={() => {
         const index = accounts.findIndex((item) => item.id === value);
@@ -526,8 +662,10 @@ const AccountCard = ({ label, value, setValue, accounts }) => {
     >
       <div style={{ fontSize: 12, opacity: 0.6 }}>{label}</div>
       <div style={{ fontWeight: 600 }}>{account?.name || "—"}</div>
-      <div style={{ opacity: 0.6 }}>{account?.balance || 0} KZT</div>
-    </motion.div>
+      <div style={{ opacity: 0.6 }}>
+        {formatMoneySmart(account?.balance || 0, account?.currency || "KZT")}
+      </div>
+    </Motion.div>
   );
 };
 
@@ -539,3 +677,4 @@ const inputStyle = {
   background: "var(--card)",
   outline: "none",
 };
+

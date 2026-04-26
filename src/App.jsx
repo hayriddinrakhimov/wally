@@ -5,7 +5,7 @@ import { Header } from "./components/Header";
 import { MainContent } from "./components/MainContent";
 import { Navbar } from "./components/Navbar";
 import { BottomSheet } from "./components/BottomSheet";
-import { TotalBalance } from "./components/TotalBalance";
+import TotalBalance from "./components/TotalBalance.jsx";
 import { AnalyticsContent } from "./components/AnalyticsContent";
 import { SubscriptionsContent } from "./components/SubscriptionsContent";
 import { DepositGoalsContent } from "./components/DepositGoalsContent";
@@ -628,6 +628,13 @@ export default function App() {
     goal: editingGoal ? "Редактировать цель" : "Новая цель",
   }[sheetType] || "";
 
+  const headerMeta = {
+    wallet: { title: "Кошелек", subtitle: "Счета и операции" },
+    analytics: { title: "Аналитика", subtitle: "Динамика доходов и расходов" },
+    subscriptions: { title: "Подписки", subtitle: "Регулярные платежи" },
+    deposit: { title: "Цели", subtitle: "Накопления и прогресс" },
+  }[activeTab] || { title: "Wally", subtitle: "Ваш личный кошелек" };
+
   return (
     <CurrencyProvider>
       <div
@@ -643,6 +650,8 @@ export default function App() {
         <Header
           onOpenSettings={() => setSheetType("settings")}
           onOpenNotifications={() => setSheetType("notifications")}
+          title={headerMeta.title}
+          subtitle={headerMeta.subtitle}
           disabled={!!sheetType}
         />
 

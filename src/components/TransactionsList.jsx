@@ -1,12 +1,74 @@
-﻿import { getCategory } from "../utils/getCategory";
+﻿import { useMemo } from "react";
+import { categories as staticCategories } from "../data/categories";
+import { useLocalStorage } from "../hooks/useLocalStorage";
 import { getTransactionColor } from "../utils/getTransactionColor";
 import { formatMoneySmart } from "../utils/formatMoney";
+
+const CATEGORY_EMOJI_BY_ICON = {
+  shopping: "🛒",
+  coffee: "☕",
+  car: "🚕",
+  wallet: "💰",
+  gift: "🎁",
+  home: "🏠",
+  game: "🎮",
+  health: "❤️",
+  sparkles: "✨",
+};
+
+const defaultCategories = {
+  expense: [
+    { key: "food", label: "Еда", color: "#60a5fa", iconKey: "shopping" },
+    { key: "taxi", label: "Такси", color: "#f59e0b", iconKey: "car" },
+  ],
+  income: [
+    { key: "salary", label: "Зарплата", color: "#22c55e", iconKey: "wallet" },
+  ],
+};
+
+const createCategoryMap = (customCategories) => {
+  const map = new Map();
+
+  staticCategories.forEach((category) => {
+    map.set(String(category.id), {
+      id: String(category.id),
+      name: category.name,
+      icon: category.icon || "✨",
+      color: category.color,
+      type: category.type,
+    });
+  });
+
+  ["expense", "income"].forEach((type) => {
+    (customCategories?.[type] || []).forEach((category) => {
+      const id = String(category?.key || "").trim();
+      if (!id) return;
+
+      map.set(id, {
+        id,
+        name: String(category?.label || "").trim() || id,
+        icon: CATEGORY_EMOJI_BY_ICON[category?.iconKey] || "✨",
+        color: category?.color || "#a78bfa",
+        type,
+      });
+    });
+  });
+
+  return map;
+};
 
 export const TransactionsList = ({
   transactions = [],
   accounts = [],
   onPress,
 }) => {
+  const [customCategories] = useLocalStorage("categories_v3", defaultCategories);
+
+  const categoryMap = useMemo(
+    () => createCategoryMap(customCategories),
+    [customCategories]
+  );
+
   if (!transactions.length) {
     return (
       <div
@@ -38,18 +100,22 @@ export const TransactionsList = ({
     }
   };
 
+  const getCategory = (id) => categoryMap.get(String(id || ""));
+
   return (
     <div style={{ padding: "0 12px", marginTop: 12 }}>
       {transactions.map((transaction) => {
         const from = transaction.from || transaction.fromAccountId;
         const to = transaction.to || transaction.toAccountId;
-        const categoryId =
-          transaction.categoryId || transaction.category || null;
+        const categoryId = transaction.categoryId || transaction.category || null;
 
         const category = getCategory(categoryId);
         const isTransfer = transaction.type === "transfer";
         const categoryBadge = isTransfer ? "🔄" : category?.icon || "✨";
-        const amountLabel = formatMoneySmart(transaction.amount, transaction.currency || "KZT");
+        const amountLabel = formatMoneySmart(
+          transaction.amount,
+          transaction.currency || "KZT"
+        );
 
         const typeLabel = getTypeLabel(transaction.type);
 
@@ -121,8 +187,7 @@ export const TransactionsList = ({
               >
                 {transaction.type === "income" && "+"}
                 {transaction.type === "expense" && "-"}
-                {transaction.type === "transfer" && "-"}{" "}
-                {amountLabel}
+                {transaction.type === "transfer" && "-"} {amountLabel}
               </div>
 
               <div

@@ -1,36 +1,35 @@
-﻿import { Plus } from "lucide-react";
+﻿// eslint-disable-next-line no-unused-vars
+import { motion } from "framer-motion";
+import { Plus } from "lucide-react";
 
-export const AddAccountCard = ({ onClick }) => {
+const AddAccountCard = ({
+  onClick,
+  compact = false,
+  title = "Добавить счет",
+  subtitle = "Создать новый баланс",
+}) => {
   return (
-    <div
+    <motion.button
+      type="button"
       onClick={onClick}
+      whileHover={{ scale: 1.01, opacity: 1 }}
+      whileTap={{ scale: 0.98 }}
+      transition={{ duration: 0.16 }}
       style={{
-        minWidth: 260,
-        height: 140,
-
-        borderRadius: 18,
+        width: "100%",
+        maxWidth: compact ? 260 : 320,
+        minHeight: compact ? 132 : 154,
+        borderRadius: 20,
         border: "1px dashed var(--primary)",
-
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-
         cursor: "pointer",
         userSelect: "none",
-
         color: "var(--primary)",
-        background: "transparent",
-
-        opacity: 0.85,
-        transition: "all 0.15s ease",
-      }}
-      onMouseEnter={(e) => {
-        e.currentTarget.style.opacity = "1";
-        e.currentTarget.style.transform = "scale(1.01)";
-      }}
-      onMouseLeave={(e) => {
-        e.currentTarget.style.opacity = "0.85";
-        e.currentTarget.style.transform = "scale(1)";
+        background: "var(--bg-secondary, #f8fafc)",
+        opacity: 0.9,
+        padding: 14,
       }}
     >
       <div
@@ -38,27 +37,30 @@ export const AddAccountCard = ({ onClick }) => {
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
-          gap: 6,
+          gap: 8,
         }}
       >
         <div
           style={{
-            width: 34,
-            height: 34,
-            borderRadius: 10,
+            width: 38,
+            height: 38,
+            borderRadius: 12,
             border: "1px solid var(--primary)",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
+            background: "rgba(59, 130, 246, 0.08)",
           }}
         >
           <Plus size={18} />
         </div>
 
-        <span style={{ fontSize: 12, fontWeight: 600 }}>
-          Добавить счет
-        </span>
+        <span style={{ fontSize: 13, fontWeight: 700 }}>{title}</span>
+        <span style={{ fontSize: 11, opacity: 0.75 }}>{subtitle}</span>
       </div>
-    </div>
+    </motion.button>
   );
 };
+
+export { AddAccountCard };
+export default AddAccountCard;

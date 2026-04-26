@@ -68,6 +68,7 @@ export const MainContent = ({
             index={activeIndex}
             setIndex={setActiveIndex}
             onEdit={onEdit}
+            onAdd={onAdd}
           />
         </div>
       </div>
