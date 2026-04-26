@@ -2,30 +2,63 @@
 
 export const AddAccountCard = ({ onClick }) => {
   return (
-    <button
-      type="button"
+    <div
       onClick={onClick}
       style={{
-        height: 42,
-        borderRadius: 999,
-        padding: "0 14px",
-        background: "var(--primary)",
-        border: "none",
-        color: "#fff",
+        minWidth: 260,
+        height: 140,
+
+        borderRadius: 18,
+        border: "1px dashed var(--primary)",
+
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        gap: 8,
+
         cursor: "pointer",
         userSelect: "none",
-        boxShadow: "0 6px 16px rgba(0,0,0,0.18)",
-        fontWeight: 600,
-        fontSize: 13,
+
+        color: "var(--primary)",
+        background: "transparent",
+
+        opacity: 0.85,
+        transition: "all 0.15s ease",
       }}
-      title="Добавить счет"
+      onMouseEnter={(e) => {
+        e.currentTarget.style.opacity = "1";
+        e.currentTarget.style.transform = "scale(1.01)";
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.opacity = "0.85";
+        e.currentTarget.style.transform = "scale(1)";
+      }}
     >
-      <Plus size={16} />
-      <span>Добавить счет</span>
-    </button>
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          gap: 6,
+        }}
+      >
+        <div
+          style={{
+            width: 34,
+            height: 34,
+            borderRadius: 10,
+            border: "1px solid var(--primary)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          <Plus size={18} />
+        </div>
+
+        <span style={{ fontSize: 12, fontWeight: 600 }}>
+          Добавить счет
+        </span>
+      </div>
+    </div>
   );
 };

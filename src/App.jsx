@@ -405,6 +405,8 @@ export default function App() {
           display: "flex",
           flexDirection: "column",
           overflow: "hidden",
+          paddingTop: 12,
+          paddingBottom: 12,
         }}
       >
         <Header
@@ -413,34 +415,42 @@ export default function App() {
           disabled={!!sheetType}
         />
 
-        <div
-          style={{
-            flex: 1,
-            display: "flex",
-            flexDirection: "column",
-            overflow: "hidden",
-            paddingTop: 0,
-          }}
-        >
-          <TotalBalance accounts={accounts} />
-
-          <MainContent
-            accounts={accounts}
-            activeIndex={safeActiveIndex}
-            setActiveIndex={setActiveIndex}
-            transactions={transactions}
-            onAdd={openCreateAccount}
-            onEdit={openEditAccount}
-            onOpenCurrency={() => setSheetType("currency")}
-            onTransactionPress={handleTransactionPress}
-          />
-
-          <Navbar
-            activeTab={activeTab}
-            setActiveTab={setActiveTab}
-            onOpenSheet={(type) => setSheetType(type)}
-          />
+        <div style={{ flexShrink: 0 }}>
+          
         </div>
+
+<div
+  style={{
+    flex: 1,
+    display: "flex",
+    flexDirection: "column",
+    overflow: "hidden",
+    paddingTop: 12,
+    paddingBottom: 12,
+    gap: 12,
+  }}
+>
+  <TotalBalance accounts={accounts} />
+
+  <MainContent
+    accounts={accounts}
+    activeIndex={safeActiveIndex}
+    setActiveIndex={setActiveIndex}
+    transactions={transactions}
+    onAdd={openCreateAccount}
+    onEdit={openEditAccount}
+    onOpenCurrency={() => setSheetType("currency")}
+    onTransactionPress={handleTransactionPress}
+  />
+</div>
+
+<div style={{ flexShrink: 0 }}>
+  <Navbar
+    activeTab={activeTab}
+    setActiveTab={setActiveTab}
+    onOpenSheet={(type) => setSheetType(type)}
+  />
+</div>
 
         <BottomSheet
           open={!!sheetType}

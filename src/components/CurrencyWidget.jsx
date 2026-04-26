@@ -1,24 +1,38 @@
-﻿import { useCurrency } from "../context/useCurrency";
+﻿import { useMemo, useState } from "react";
+import { useCurrency } from "../context/useCurrency";
+import { Plus, ChevronLeft, ChevronRight } from "lucide-react";
 
 const PRIORITY = ["USD", "EUR", "RUB"];
+
+const PAGE_SIZE = 4;
 
 export const CurrencyWidget = ({ onOpen }) => {
   const { watchlist, convert, baseCurrency, loading, prevRates, rates } =
     useCurrency();
 
-  const sorted = [...(watchlist || [])]
-    .filter((currency) => currency !== baseCurrency)
-    .sort((a, b) => {
-      const ai = PRIORITY.indexOf(a);
-      const bi = PRIORITY.indexOf(b);
+  const [page, setPage] = useState(0);
 
-      if (ai === -1 && bi === -1) return a.localeCompare(b);
-      if (ai === -1) return 1;
-      if (bi === -1) return -1;
+  const sorted = useMemo(() => {
+    return [...(watchlist || [])]
+      .filter((currency) => currency !== baseCurrency)
+      .sort((a, b) => {
+        const ai = PRIORITY.indexOf(a);
+        const bi = PRIORITY.indexOf(b);
 
-      return ai - bi;
-    })
-    .slice(0, 4);
+        if (ai === -1 && bi === -1) return a.localeCompare(b);
+        if (ai === -1) return 1;
+        if (bi === -1) return -1;
+
+        return ai - bi;
+      });
+  }, [watchlist, baseCurrency]);
+
+  const pages = Math.max(1, Math.ceil(sorted.length / PAGE_SIZE));
+
+  const visible = useMemo(() => {
+    const start = page * PAGE_SIZE;
+    return sorted.slice(start, start + PAGE_SIZE);
+  }, [sorted, page]);
 
   const getTrend = (currency) => {
     const now = rates[currency];
@@ -44,51 +58,63 @@ export const CurrencyWidget = ({ onOpen }) => {
         borderRadius: 16,
         background: "white",
         border: "1px solid #eee",
+        display: "flex",
+        flexDirection: "column",
+        gap: 10,
       }}
     >
+      {/* HEADER */}
       <div
         style={{
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
-          marginBottom: 10,
         }}
       >
         <div>
-          <div style={{ fontWeight: 700, fontSize: 14 }}>Финансовая погода</div>
+          <div style={{ fontWeight: 700, fontSize: 14 }}>
+            Курс валют
+          </div>
           <div style={{ fontSize: 12, opacity: 0.65 }}>
-            Курс к {baseCurrency}
+            База: {baseCurrency}
           </div>
         </div>
 
+        {/* как кнопка "+" у счетов */}
         <button
-          type="button"
           onClick={onOpen}
           style={{
-            border: "none",
-            background: "var(--primary)",
-            color: "white",
-            padding: "6px 10px",
+            width: 34,
+            height: 34,
             borderRadius: 10,
-            fontSize: 12,
+            border: "1px solid var(--primary)",
+            background: "transparent",
+            color: "var(--primary)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
             cursor: "pointer",
-            fontWeight: 600,
           }}
         >
-          Изменить
+          <Plus size={18} />
         </button>
       </div>
 
+      {/* BODY */}
       {loading && (
-        <div style={{ fontSize: 13, opacity: 0.65 }}>Обновление курсов...</div>
+        <div style={{ fontSize: 13, opacity: 0.65 }}>
+          Обновление курсов...
+        </div>
       )}
 
-      {!loading && sorted.length === 0 && (
-        <div style={{ fontSize: 13, opacity: 0.65 }}>Нет валют для отображения</div>
+      {!loading && visible.length === 0 && (
+        <div style={{ fontSize: 13, opacity: 0.65 }}>
+          Нет валют для отображения
+        </div>
       )}
 
       {!loading &&
-        sorted.map((currency) => {
+        visible.map((currency) => {
           const trend = getTrend(currency);
 
           return (
@@ -113,6 +139,44 @@ export const CurrencyWidget = ({ onOpen }) => {
             </div>
           );
         })}
+
+      {/* PAGINATION */}
+      {pages > 1 && (
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            marginTop: 6,
+          }}
+        >
+          <button
+            onClick={() => setPage((p) => Math.max(0, p - 1))}
+            style={{
+              border: "none",
+              background: "transparent",
+              cursor: "pointer",
+            }}
+          >
+            <ChevronLeft size={18} />
+          </button>
+
+          <div style={{ fontSize: 12, opacity: 0.6 }}>
+            {page + 1} / {pages}
+          </div>
+
+          <button
+            onClick={() => setPage((p) => Math.min(pages - 1, p + 1))}
+            style={{
+              border: "none",
+              background: "transparent",
+              cursor: "pointer",
+            }}
+          >
+            <ChevronRight size={18} />
+          </button>
+        </div>
+      )}
     </div>
   );
 };

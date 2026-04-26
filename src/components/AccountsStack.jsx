@@ -1,26 +1,25 @@
-﻿// eslint-disable-next-line no-unused-vars
-import { motion } from "framer-motion";
+﻿import { motion } from "framer-motion";
 import { AccountCard } from "./AccountCard";
-import { AddAccountCard } from "./AddAccountCard";
 import { useRef } from "react";
 
 export const AccountsStack = ({
   accounts,
   index = 0,
   setIndex,
-  onAdd,
   onEdit,
 }) => {
   const isDragging = useRef(false);
 
-  const count = accounts.length;
-  const safeIndex = count > 0 ? ((index % count) + count) % count : 0;
+  const count = accounts?.length || 0;
+
+  const safeIndex =
+    count > 0 ? ((index % count) + count) % count : 0;
 
   const handleDragStart = () => {
     isDragging.current = true;
   };
 
-  const handleDragEnd = (event, info) => {
+  const handleDragEnd = (_, info) => {
     const offset = info.offset.x;
     const velocity = info.velocity.x;
 
@@ -32,8 +31,9 @@ export const AccountsStack = ({
       newIndex = safeIndex - 1;
     }
 
-    if (newIndex < 0) newIndex = count - 1;
-    if (newIndex >= count) newIndex = 0;
+    if (count > 0) {
+      newIndex = (newIndex + count) % count;
+    }
 
     setIndex?.(newIndex);
     isDragging.current = false;
@@ -58,16 +58,9 @@ export const AccountsStack = ({
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        overflow: "hidden",
+        overflow: "visible",
       }}
     >
-      {count === 0 && (
-        <div style={{ width: "100%", padding: "0 16px" }}>
-          <AddAccountCard onClick={onAdd} />
-        </div>
-      )}
-
-      {/* ================= ACCOUNTS ================= */}
       {accounts.map((acc, i) => {
         const offset = getOffset(i);
         const isActive = offset === 0;
@@ -78,16 +71,16 @@ export const AccountsStack = ({
             animate={{
               x: offset * 260,
               scale: isActive ? 1 : 0.92,
-              opacity: isActive ? 1 : 0.4,
+              opacity: isActive ? 1 : 0.5,
+              zIndex: isActive ? 10 : 1,
             }}
             transition={{
               type: "spring",
               stiffness: 260,
               damping: 24,
-              mass: 0.7,
             }}
             drag="x"
-            dragElastic={0.18}
+            dragElastic={0.2}
             dragMomentum={false}
             onDragStart={handleDragStart}
             onDragEnd={handleDragEnd}
@@ -95,15 +88,14 @@ export const AccountsStack = ({
               position: "absolute",
               width: 260,
               cursor: "grab",
-              pointerEvents: isActive ? "auto" : "none",
             }}
           >
             <AccountCard
               account={acc}
               isActive={isActive}
               onEdit={(account) => {
-                if (!isDragging.current && onEdit) {
-                  onEdit(account);
+                if (!isDragging.current) {
+                  onEdit?.(account);
                 }
               }}
             />
@@ -111,25 +103,7 @@ export const AccountsStack = ({
         );
       })}
 
-      {/* ================= ADD BUTTON (OVERLAY) ================= */}
-      {count > 0 && (
-        <div
-          style={{
-            position: "absolute",
-            right: 10,
-            top: 10,
-            zIndex: 4,
-          }}
-        >
-          <AddAccountCard
-            onClick={() => {
-              if (!isDragging.current) onAdd?.();
-            }}
-          />
-        </div>
-      )}
-
-      {/* ================= INDICATOR ================= */}
+      {/* INDICATOR */}
       <div
         style={{
           position: "absolute",
@@ -150,7 +124,7 @@ export const AccountsStack = ({
               width: 6,
               height: 6,
               borderRadius: "50%",
-              background: "#111",
+              background: "var(--text, #111)",
             }}
           />
         ))}

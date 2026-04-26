@@ -18,7 +18,7 @@ export const AccountFormContent = ({
     if (!name.trim()) return;
 
     onSave({
-      ...account,
+      ...(account || {}),
       name: name.trim(),
       color,
     });
@@ -51,16 +51,21 @@ export const AccountFormContent = ({
           }}
         >
           {[
-            { id: "cash", label: "??" },
-            { id: "card", label: "??" },
-            { id: "deposit", label: "??" },
+            { id: "cash", label: "💵" },
+            { id: "card", label: "💳" },
+            { id: "deposit", label: "🏦" },
           ].map((accountType) => {
             const active = type === accountType.id;
 
             return (
               <div
                 key={accountType.id}
-                onClick={() => onChange({ ...account, type: accountType.id })}
+                onClick={() =>
+                  onChange({
+                    ...(account || {}),
+                    type: accountType.id,
+                  })
+                }
                 style={{
                   flex: 1,
                   height: 48,
@@ -90,7 +95,7 @@ export const AccountFormContent = ({
             value={name}
             onChange={(event) =>
               onChange({
-                ...account,
+                ...(account || {}),
                 name: event.target.value,
               })
             }
@@ -117,7 +122,7 @@ export const AccountFormContent = ({
               value={currency}
               onChange={(event) =>
                 onChange({
-                  ...account,
+                  ...(account || {}),
                   currency: event.target.value,
                 })
               }
@@ -148,6 +153,8 @@ export const AccountFormContent = ({
     </div>
   );
 };
+
+/* ================= PREVIEW ================= */
 
 const gradients = {
   blue: "linear-gradient(135deg, #3b82f6, #1e293b)",
@@ -199,12 +206,14 @@ const PreviewCard = ({ name, currency, color, type }) => {
         {type === "card"
           ? "**** 1234"
           : type === "deposit"
-            ? "Ставка 10%"
-            : "Наличные"}
+          ? "Ставка 10%"
+          : "Наличные"}
       </div>
     </div>
   );
 };
+
+/* ================= UI HELPERS ================= */
 
 const SectionTitle = ({ children }) => {
   const theme = useTheme();
@@ -251,7 +260,9 @@ const Row = ({ title, right, onClick }) => {
         cursor: onClick ? "pointer" : "default",
       }}
     >
-      <div style={{ color: theme.colors.text, fontWeight: 500 }}>{title}</div>
+      <div style={{ color: theme.colors.text, fontWeight: 500 }}>
+        {title}
+      </div>
       {right}
     </div>
   );
@@ -268,14 +279,16 @@ const ColorDot = ({ color }) => (
   />
 );
 
+/* ================= UTILS ================= */
+
 function getCurrencySymbol(currency) {
   switch (currency) {
     case "USD":
       return "$";
     case "RUB":
-      return "?";
+      return "₽";
     default:
-      return "?";
+      return "₸";
   }
 }
 
