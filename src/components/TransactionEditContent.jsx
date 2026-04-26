@@ -19,7 +19,7 @@ export const TransactionEditContent = ({
   const fromOptions = accounts || [];
   const toOptions = accounts || [];
   const currencyOptions = Array.from(
-    new Set([baseCurrency, ...(watchlist || []), data?.currency || "KZT", "KZT"])
+    new Set([baseCurrency, ...(watchlist || []), data?.currency || baseCurrency])
   ).filter(Boolean);
 
   const save = () => {
@@ -56,7 +56,7 @@ export const TransactionEditContent = ({
         />
 
         <select
-          value={data.currency || "KZT"}
+          value={data.currency || baseCurrency || ""}
           onChange={(event) =>
             setData({ ...data, currency: event.target.value })
           }

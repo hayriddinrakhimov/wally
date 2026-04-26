@@ -21,6 +21,7 @@ export const NotificationsContent = ({
         }}
       >
         <button
+          type="button"
           onClick={() => markAllAsRead?.()}
           style={{
             background: "transparent",

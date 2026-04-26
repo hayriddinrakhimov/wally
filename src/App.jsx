@@ -4,7 +4,7 @@ import { useLocalStorage } from "./hooks/useLocalStorage";
 import { Header } from "./components/Header";
 import { MainContent } from "./components/MainContent";
 import { Navbar } from "./components/Navbar";
-import { BottomSheet } from "./components/BottomSheet";
+import BottomSheet from "./components/BottomSheet";
 import TotalBalance from "./components/TotalBalance.jsx";
 import { AnalyticsContent } from "./components/AnalyticsContent";
 import { SubscriptionsContent } from "./components/SubscriptionsContent";
@@ -20,6 +20,7 @@ import { ColorPickerContent } from "./components/ColorPickerContent";
 import { CurrencyPickerContent } from "./components/CurrencyPickerContent";
 import { SubscriptionFormContent } from "./components/SubscriptionFormContent";
 import { DepositGoalFormContent } from "./components/DepositGoalFormContent";
+import { BarChart3, PiggyBank, Repeat, Wallet } from "lucide-react";
 
 import { CurrencyProvider } from "./context/CurrencyProvider";
 import { useSetPrimary } from "./theme/useTheme";
@@ -30,19 +31,7 @@ import {
   normalizeSubscription,
   normalizeTransaction,
 } from "./utils/normalizers";
-
-const ALL_COLORS = [
-  "blue",
-  "green",
-  "purple",
-  "orange",
-  "red",
-  "pink",
-  "cyan",
-  "yellow",
-  "indigo",
-  "teal",
-];
+import { normalizeColor } from "./utils/colors";
 
 export default function App() {
   const [activeTab, setActiveTab] = useState("wallet");
@@ -50,11 +39,11 @@ export default function App() {
   const [sheetReturnType, setSheetReturnType] = useState(null);
 
   const setPrimary = useSetPrimary();
-  const [primaryKey, setPrimaryKey] = useLocalStorage("primaryColor", "blue");
+  const [primaryColor, setPrimaryColor] = useLocalStorage("primaryColor", "#3b82f6");
 
   useEffect(() => {
-    setPrimary(primaryKey);
-  }, [primaryKey, setPrimary]);
+    setPrimary(normalizeColor(primaryColor, "#3b82f6"));
+  }, [primaryColor, setPrimary]);
 
   const [accountsRaw, setAccounts] = useLocalStorage("accounts", []);
   const [transactionsRaw, setTransactions] = useLocalStorage("transactions", []);
@@ -63,7 +52,7 @@ export default function App() {
   const [activeIndex, setActiveIndex] = useLocalStorage("activeIndex", 0);
 
   const [editingAccount, setEditingAccount] = useState(null);
-  const [accountColor, setAccountColor] = useState("blue");
+  const [accountColor, setAccountColor] = useState("#3b82f6");
   const [accountDraft, setAccountDraft] = useState(null);
   const [editingTransaction, setEditingTransaction] = useState(null);
   const [transactionPreset, setTransactionPreset] = useState(null);
@@ -103,7 +92,7 @@ export default function App() {
           name: "Наличные",
           balance: 0,
           currency: "KZT",
-          color: "green",
+          color: "#22c55e",
           type: "cash",
         },
         {
@@ -111,7 +100,7 @@ export default function App() {
           name: "Счет №1",
           balance: 0,
           currency: "KZT",
-          color: "blue",
+          color: "#3b82f6",
           type: "card",
         },
         {
@@ -119,7 +108,7 @@ export default function App() {
           name: "Депозит",
           balance: 0,
           currency: "KZT",
-          color: "purple",
+          color: "#a855f7",
           type: "deposit",
         },
       ]);
@@ -201,10 +190,6 @@ export default function App() {
     }
   }, [accounts.length, safeActiveIndex, activeIndexValue, setActiveIndex]);
 
-  const getFreeColor = useCallback((used) => {
-    return ALL_COLORS.find((color) => !used.includes(color)) || "blue";
-  }, []);
-
   const syncSubscriptionByTransaction = useCallback(
     (transaction) => {
       if (!transaction?.subscriptionId) return;
@@ -282,28 +267,28 @@ export default function App() {
   }, []);
 
   const openCreateAccount = useCallback(() => {
-    const usedColors = accountsStore.map((account) => account.color).filter(Boolean);
-    const color = getFreeColor(usedColors);
+    const color = normalizeColor(accountsStore[0]?.color, normalizeColor(primaryColor));
+    const defaultCurrency = accountsStore[0]?.currency || "KZT";
 
     setEditingAccount(null);
     setAccountDraft({
       name: "",
-      currency: "KZT",
+      currency: defaultCurrency,
       type: "card",
       color,
     });
     setAccountColor(color);
     setSheetType("account");
-  }, [accountsStore, getFreeColor]);
+  }, [accountsStore, primaryColor]);
 
   const openEditAccount = useCallback((account) => {
     if (!account) return;
 
     setEditingAccount(account);
     setAccountDraft(account);
-    setAccountColor(account.color || "blue");
+    setAccountColor(normalizeColor(account.color, normalizeColor(primaryColor)));
     setSheetType("account");
-  }, []);
+  }, [primaryColor]);
 
   const handleSaveAccount = useCallback(
     (data) => {
@@ -315,7 +300,7 @@ export default function App() {
                 name: String(data.name || account.name).trim(),
                 currency: data.currency || account.currency,
                 type: data.type || account.type,
-                color: data.color || account.color,
+                color: normalizeColor(data.color || account.color),
               }
             : account
         )
@@ -335,8 +320,8 @@ export default function App() {
         {
           id: Date.now().toString(),
           name,
-          currency: data.currency || "KZT",
-          color: data.color || accountColor,
+          currency: data.currency || accountsStore[0]?.currency || "KZT",
+          color: normalizeColor(data.color || accountColor),
           type: data.type || "card",
           balance: 0,
         },
@@ -344,7 +329,7 @@ export default function App() {
 
       closeSheet();
     },
-    [setAccounts, accountColor, closeSheet]
+    [setAccounts, accountColor, closeSheet, accountsStore]
   );
 
   const openCreateSubscription = useCallback(() => {
@@ -352,12 +337,12 @@ export default function App() {
     setSubscriptionDraft({
       name: "",
       amount: "",
-      currency: "KZT",
+      currency: accounts[0]?.currency || "KZT",
       cycle: "month",
       startDate: Date.now(),
       nextDueDate: Date.now(),
       accountId: accounts[0]?.id || "",
-      categoryId: "uncategorized",
+      categoryId: "",
       isActive: true,
       remindBeforeDays: 7,
       note: "",
@@ -416,7 +401,7 @@ export default function App() {
     setGoalDraft({
       title: "",
       targetAmount: "",
-      currency: "KZT",
+      currency: accounts[0]?.currency || "KZT",
       startDate: Date.now(),
       targetDate: Date.now() + 1000 * 60 * 60 * 24 * 90,
       plannedContribution: "",
@@ -563,6 +548,7 @@ export default function App() {
     if (sheetType === "add") {
       return (
         <button
+          type="button"
           style={btnStyle}
           onClick={() => document.dispatchEvent(new Event("submitTransaction"))}
         >
@@ -574,6 +560,7 @@ export default function App() {
     if (sheetType === "account") {
       return (
         <button
+          type="button"
           style={btnStyle}
           onClick={() => document.dispatchEvent(new Event("submitAccount"))}
         >
@@ -585,6 +572,7 @@ export default function App() {
     if (sheetType === "subscription") {
       return (
         <button
+          type="button"
           style={btnStyle}
           onClick={() => document.dispatchEvent(new Event("submitSubscription"))}
         >
@@ -596,6 +584,7 @@ export default function App() {
     if (sheetType === "goal") {
       return (
         <button
+          type="button"
           style={btnStyle}
           onClick={() => document.dispatchEvent(new Event("submitGoal"))}
         >
@@ -607,21 +596,13 @@ export default function App() {
     return null;
   }, [sheetType, editingAccount, editingSubscription, editingGoal]);
 
-  const usedAccountColors = useMemo(() => {
-    const editingId = editingAccount?.id;
-    return accountsStore
-      .filter((account) => account.id !== editingId)
-      .map((account) => account.color)
-      .filter(Boolean);
-  }, [accountsStore, editingAccount]);
-
   const sheetTitle = {
     settings: "Настройки",
     notifications: "Уведомления",
+    currency: "Валюты",
     add: "Новая операция",
     account: editingAccount ? "Редактировать счет" : "Новый счет",
     transaction: "Изменить операцию",
-    currency: "Валюты",
     themeColor: "Цвет приложения",
     accountColor: "Цвет счета",
     subscription: editingSubscription ? "Редактировать подписку" : "Новая подписка",
@@ -635,11 +616,18 @@ export default function App() {
     deposit: { title: "Цели", subtitle: "Накопления и прогресс" },
   }[activeTab] || { title: "Wally", subtitle: "Ваш личный кошелек" };
 
+  const headerIcon = {
+    wallet: Wallet,
+    analytics: BarChart3,
+    subscriptions: Repeat,
+    deposit: PiggyBank,
+  }[activeTab] || Wallet;
+
   return (
     <CurrencyProvider>
       <div
         style={{
-          minHeight: "100vh",
+          minHeight: "100dvh",
           display: "flex",
           flexDirection: "column",
           overflow: "hidden",
@@ -650,6 +638,7 @@ export default function App() {
         <Header
           onOpenSettings={() => setSheetType("settings")}
           onOpenNotifications={() => setSheetType("notifications")}
+          icon={headerIcon}
           title={headerMeta.title}
           subtitle={headerMeta.subtitle}
           disabled={!!sheetType}
@@ -753,7 +742,6 @@ export default function App() {
             <AccountFormContent
               account={accountDraft}
               color={accountColor}
-              usedColors={usedAccountColors}
               onOpenColorPicker={() => openNestedSheet("accountColor", "account")}
               onChange={setAccountDraft}
               onSave={(data) =>
@@ -802,9 +790,9 @@ export default function App() {
           {sheetType === "themeColor" && (
             <ColorPickerContent
               title="Цвет приложения"
-              value={primaryKey}
+              value={normalizeColor(primaryColor)}
               onChange={(nextColor) => {
-                setPrimaryKey(nextColor);
+                setPrimaryColor(normalizeColor(nextColor));
                 goBackToParentSheet();
               }}
             />
@@ -813,10 +801,10 @@ export default function App() {
           {sheetType === "accountColor" && (
             <AccountColorPickerContent
               value={accountColor}
-              usedColors={usedAccountColors}
               onChange={(nextColor) => {
-                setAccountColor(nextColor);
-                setAccountDraft((prev) => (prev ? { ...prev, color: nextColor } : prev));
+                const normalized = normalizeColor(nextColor);
+                setAccountColor(normalized);
+                setAccountDraft((prev) => (prev ? { ...prev, color: normalized } : prev));
                 goBackToParentSheet();
               }}
             />

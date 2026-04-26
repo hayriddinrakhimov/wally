@@ -1,6 +1,7 @@
 ﻿import { useMemo } from "react";
 import { useCurrency } from "../context/useCurrency";
 import { formatMoney, formatMoneySmart } from "../utils/formatMoney";
+import { normalizeColor } from "../utils/colors";
 
 const TYPE_LABELS = {
   cash: "Наличные",
@@ -15,7 +16,7 @@ const getAccountColor = (account) => {
     deposit: "#f59e0b",
   };
 
-  return account?.color || map[account?.type] || "var(--primary)";
+  return normalizeColor(account?.color, map[account?.type] || "#3b82f6");
 };
 
 const TotalBalance = ({ accounts = [] }) => {

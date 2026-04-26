@@ -62,6 +62,9 @@ export const DepositGoalsContent = ({
         }}
       >
         <button
+          type="button"
+          title="Добавить цель"
+          aria-label="Добавить цель"
           onClick={onCreate}
           style={{
             width: 34,
@@ -78,15 +81,15 @@ export const DepositGoalsContent = ({
         </button>
       </div>
 
-      <SectionTitle title="РђРєС‚РёРІРЅС‹Рµ С†РµР»Рё" />
-      {activeGoals.length === 0 && <EmptyCard text="РђРєС‚РёРІРЅС‹С… С†РµР»РµР№ РїРѕРєР° РЅРµС‚" />}
+      <SectionTitle title="Активные цели" />
+      {activeGoals.length === 0 && <EmptyCard text="Активных целей пока нет" />}
       {activeGoals.map((goal) => {
         const accountName =
-          accounts.find((account) => account.id === goal.linkedAccountId)?.name || "вЂ”";
+          accounts.find((account) => account.id === goal.linkedAccountId)?.name || "—";
 
         const frequencyLabel =
           GOAL_FREQUENCY_OPTIONS.find((item) => item.key === goal.frequency)?.label ||
-          "РњРµСЃСЏС†";
+          "Месяц";
 
         return (
           <div key={goal.id} style={{ ...cardStyle, marginBottom: 10 }}>
@@ -99,9 +102,9 @@ export const DepositGoalsContent = ({
               }}
             >
               <div>
-                <div style={{ fontWeight: 700 }}>{goal.title || "Р‘РµР· РЅР°Р·РІР°РЅРёСЏ"}</div>
+                <div style={{ fontWeight: 700 }}>{goal.title || "Без названия"}</div>
                 <div style={{ fontSize: 12, color: "var(--text-secondary)" }}>
-                  {accountName} вЂў {frequencyLabel}
+                  {accountName} • {frequencyLabel}
                 </div>
               </div>
 
@@ -110,7 +113,7 @@ export const DepositGoalsContent = ({
                   {Math.round(goal.progress.percent)}%
                 </div>
                 <div style={{ fontSize: 12, color: "var(--text-secondary)" }}>
-                  {goal.progress.daysLeft} РґРЅ.
+                  {goal.progress.daysLeft} дн.
                 </div>
               </div>
             </div>
@@ -134,30 +137,48 @@ export const DepositGoalsContent = ({
             </div>
 
             <div style={{ fontSize: 13, marginBottom: 4 }}>
-              РќР°РєРѕРїР»РµРЅРѕ:{" "}
+              Накоплено:{" "}
               <strong>{formatMoney(goal.progress.progressAmount, baseCurrency)}</strong>
             </div>
             <div style={{ fontSize: 13, marginBottom: 4 }}>
-              Р¦РµР»СЊ: <strong>{formatMoney(goal.progress.targetAmount, baseCurrency)}</strong>
+              Цель: <strong>{formatMoney(goal.progress.targetAmount, baseCurrency)}</strong>
             </div>
             <div style={{ fontSize: 13, marginBottom: 10 }}>
-              РќСѓР¶РЅРѕ Р·Р° {frequencyLabel.toLowerCase()}:{" "}
+              Нужно за {frequencyLabel.toLowerCase()}:{" "}
               <strong>
                 {formatMoney(goal.progress.requiredPerPeriod, baseCurrency)}
               </strong>
             </div>
 
             <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-              <button onClick={() => onTopUp(goal)} style={actionBtnStyle}>
-                <ArrowUpRight size={14} /> РџРѕРїРѕР»РЅРёС‚СЊ
+              <button
+                type="button"
+                onClick={() => onTopUp(goal)}
+                style={actionBtnStyle}
+              >
+                <ArrowUpRight size={14} /> Пополнить
               </button>
-              <button onClick={() => onWithdraw(goal)} style={actionBtnStyle}>
-                <ArrowDownLeft size={14} /> РЎРЅСЏС‚СЊ
+              <button
+                type="button"
+                onClick={() => onWithdraw(goal)}
+                style={actionBtnStyle}
+              >
+                <ArrowDownLeft size={14} /> Снять
               </button>
-              <button onClick={() => onEdit(goal)} style={actionBtnStyle}>
+              <button
+                type="button"
+                title="Редактировать цель"
+                onClick={() => onEdit(goal)}
+                style={actionBtnStyle}
+              >
                 <Pencil size={14} />
               </button>
-              <button onClick={() => onArchive(goal)} style={actionBtnStyle}>
+              <button
+                type="button"
+                title="В архив"
+                onClick={() => onArchive(goal)}
+                style={actionBtnStyle}
+              >
                 <Trash2 size={14} />
               </button>
             </div>
@@ -165,13 +186,13 @@ export const DepositGoalsContent = ({
         );
       })}
 
-      <SectionTitle title="Р—Р°РІРµСЂС€РµРЅРЅС‹Рµ / Р°СЂС…РёРІ" />
-      {completedGoals.length === 0 && <EmptyCard text="РџРѕРєР° РЅРµС‚ Р·Р°РІРµСЂС€РµРЅРЅС‹С… С†РµР»РµР№" />}
+      <SectionTitle title="Завершенные / архив" />
+      {completedGoals.length === 0 && <EmptyCard text="Пока нет завершенных целей" />}
       {completedGoals.map((goal) => (
         <div key={goal.id} style={{ ...cardStyle, marginBottom: 10 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <PiggyBank size={16} />
-            <div style={{ fontWeight: 700 }}>{goal.title || "Р‘РµР· РЅР°Р·РІР°РЅРёСЏ"}</div>
+            <div style={{ fontWeight: 700 }}>{goal.title || "Без названия"}</div>
           </div>
           <div style={{ fontSize: 13, marginTop: 6 }}>
             {formatMoney(goal.progress.progressAmount, baseCurrency)} /{" "}

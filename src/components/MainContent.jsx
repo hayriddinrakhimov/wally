@@ -44,6 +44,9 @@ export const MainContent = ({
           </div>
 
           <button
+            type="button"
+            title="Добавить счет"
+            aria-label="Добавить счет"
             onClick={onAdd}
             style={{
               width: 34,

@@ -1,24 +1,12 @@
-﻿import { Pencil } from "lucide-react";
+import { Pencil } from "lucide-react";
 import { useCurrency } from "../context/useCurrency";
 import { formatMoneySmart } from "../utils/formatMoney";
-
-const gradients = {
-  blue: "linear-gradient(135deg, #3b82f6, #1e293b)",
-  green: "linear-gradient(135deg, #22c55e, #1e293b)",
-  purple: "linear-gradient(135deg, #a855f7, #1e293b)",
-  orange: "linear-gradient(135deg, #f97316, #1e293b)",
-  red: "linear-gradient(135deg, #ef4444, #1e293b)",
-  pink: "linear-gradient(135deg, #ec4899, #1e293b)",
-  cyan: "linear-gradient(135deg, #06b6d4, #1e293b)",
-  yellow: "linear-gradient(135deg, #eab308, #1e293b)",
-  indigo: "linear-gradient(135deg, #6366f1, #1e293b)",
-  teal: "linear-gradient(135deg, #14b8a6, #1e293b)",
-};
+import { toCardGradient } from "../utils/colors";
 
 export const AccountCard = ({ account, onEdit, isActive = false }) => {
   const { convert, baseCurrency } = useCurrency();
 
-  const bg = gradients[account.color] || gradients.blue;
+  const bg = toCardGradient(account.color);
   const amountLabel = formatMoneySmart(account.balance, account.currency || "KZT");
   const converted = convert(account.balance, account.currency, baseCurrency);
   const showConverted = account.currency !== baseCurrency;
@@ -38,9 +26,7 @@ export const AccountCard = ({ account, onEdit, isActive = false }) => {
         display: "flex",
         flexDirection: "column",
         justifyContent: "space-between",
-        border: isActive
-          ? "1px solid rgba(255,255,255,0.35)"
-          : "1px solid transparent",
+        border: isActive ? "1px solid rgba(255,255,255,0.35)" : "1px solid transparent",
         boxShadow: isActive ? "0 10px 24px rgba(15, 23, 42, 0.28)" : "none",
       }}
     >

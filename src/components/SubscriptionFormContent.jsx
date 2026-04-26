@@ -1,20 +1,21 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { CYCLE_OPTIONS } from "../utils/financeSelectors";
 import { formatDateInput } from "../utils/dateRanges";
+import { useCurrency } from "../context/useCurrency";
 
-const createDefaultDraft = (accounts = []) => {
+const createDefaultDraft = (accounts = [], defaultCurrency = "KZT") => {
   const firstAccountId = accounts[0]?.id || "";
   const now = Date.now();
 
   return {
     name: "",
     amount: "",
-    currency: "KZT",
+    currency: defaultCurrency,
     cycle: "month",
     startDate: now,
     nextDueDate: now,
     accountId: firstAccountId,
-    categoryId: "uncategorized",
+    categoryId: "",
     isActive: true,
     remindBeforeDays: 7,
     note: "",
@@ -27,13 +28,21 @@ export const SubscriptionFormContent = ({
   onSave,
   onDelete,
 }) => {
+  const { watchlist, baseCurrency } = useCurrency();
   const [form, setForm] = useState(() =>
     subscription
       ? {
           ...subscription,
           amount: String(subscription.amount ?? ""),
         }
-      : createDefaultDraft(accounts)
+      : createDefaultDraft(accounts, baseCurrency)
+  );
+  const currencyOptions = useMemo(
+    () =>
+      Array.from(new Set([baseCurrency, ...(watchlist || []), form.currency])).filter(
+        Boolean
+      ),
+    [baseCurrency, watchlist, form.currency]
   );
 
   const canDelete = useMemo(() => Boolean(subscription?.id), [subscription?.id]);
@@ -82,9 +91,11 @@ export const SubscriptionFormContent = ({
             }
             style={inputStyle}
           >
-            <option value="KZT">KZT</option>
-            <option value="USD">USD</option>
-            <option value="RUB">RUB</option>
+            {currencyOptions.map((code) => (
+              <option key={code} value={code}>
+                {code}
+              </option>
+            ))}
           </select>
         </Field>
       </Row>
@@ -174,7 +185,7 @@ export const SubscriptionFormContent = ({
           onChange={(event) =>
             setForm((prev) => ({ ...prev, categoryId: event.target.value }))
           }
-          placeholder="Например: food"
+          placeholder="Без категории"
           style={inputStyle}
         />
       </Field>
@@ -211,6 +222,7 @@ export const SubscriptionFormContent = ({
 
       {canDelete && (
         <button
+          type="button"
           onClick={() => onDelete(subscription.id)}
           style={{
             height: 40,

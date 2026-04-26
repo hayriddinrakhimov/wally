@@ -23,11 +23,11 @@ import { DateRangePicker } from "./common/DateRangePicker";
 import { SurfaceCard } from "./common/SurfaceCard";
 
 const STATUS_META = {
-  active: { label: "РђРєС‚РёРІРЅР°", color: "#334155", bg: "#f1f5f9" },
-  dueSoon: { label: "РЎРєРѕСЂРѕ РїР»Р°С‚РµР¶", color: "#92400e", bg: "#fef3c7" },
-  overdue: { label: "РџСЂРѕСЃСЂРѕС‡РµРЅР°", color: "#991b1b", bg: "#fee2e2" },
-  paidInCurrentCycle: { label: "РћРїР»Р°С‡РµРЅР°", color: "#166534", bg: "#dcfce7" },
-  inactive: { label: "Р’ Р°СЂС…РёРІРµ", color: "#6b7280", bg: "#f3f4f6" },
+  active: { label: "Активна", color: "#334155", bg: "#f1f5f9" },
+  dueSoon: { label: "Скоро платеж", color: "#92400e", bg: "#fef3c7" },
+  overdue: { label: "Просрочена", color: "#991b1b", bg: "#fee2e2" },
+  paidInCurrentCycle: { label: "Оплачена", color: "#166534", bg: "#dcfce7" },
+  inactive: { label: "В архиве", color: "#6b7280", bg: "#f3f4f6" },
 };
 
 const getOccurrencesInRange = (subscription, start, end) => {
@@ -135,6 +135,9 @@ export const SubscriptionsContent = ({
         }}
       >
         <button
+          type="button"
+          title="Добавить подписку"
+          aria-label="Добавить подписку"
           onClick={onCreate}
           style={{
             width: 34,
@@ -159,15 +162,15 @@ export const SubscriptionsContent = ({
 
       <SurfaceCard delay={0} style={{ marginBottom: 12 }}>
         <SummaryRow
-          label="РћР¶РёРґР°РµРјРѕ РІ РїРµСЂРёРѕРґ"
+          label="Ожидается в период"
           value={formatMoney(expectedInPeriod, baseCurrency)}
         />
         <SummaryRow
-          label="РћРїР»Р°С‡РµРЅРѕ РІ РїРµСЂРёРѕРґ"
+          label="Оплачено в период"
           value={formatMoney(paidInPeriod, baseCurrency)}
         />
         <SummaryRow
-          label="РћСЃС‚Р°С‚РѕРє"
+          label="Остаток"
           value={formatMoney(
             Math.max(0, expectedInPeriod - paidInPeriod),
             baseCurrency
@@ -184,14 +187,14 @@ export const SubscriptionsContent = ({
           }}
         >
           <Indicator
-            title="РћРїР»Р°С‡РµРЅРѕ"
+            title="Оплачено"
             value={indicators.paid}
             tone="green"
             icon={CheckCircle2}
           />
-          <Indicator title="РЎРєРѕСЂРѕ" value={indicators.dueSoon} tone="amber" icon={Clock3} />
+          <Indicator title="Скоро" value={indicators.dueSoon} tone="amber" icon={Clock3} />
           <Indicator
-            title="РџСЂРѕСЃСЂРѕС‡РµРЅРѕ"
+            title="Просрочено"
             value={indicators.overdue}
             tone="red"
             icon={AlertTriangle}
@@ -200,11 +203,11 @@ export const SubscriptionsContent = ({
       </SurfaceCard>
 
       <SurfaceCard delay={0.1}>
-        <div style={{ fontWeight: 700, marginBottom: 10 }}>Р‘Р»РёР¶Р°Р№С€РёРµ РїР»Р°С‚РµР¶Рё</div>
+        <div style={{ fontWeight: 700, marginBottom: 10 }}>Ближайшие платежи</div>
 
         {items.length === 0 && (
           <div style={{ color: "var(--text-secondary)", fontSize: 13 }}>
-            РџРѕРєР° РЅРµС‚ РїРѕРґРїРёСЃРѕРє
+            Пока нет подписок
           </div>
         )}
 
@@ -212,7 +215,7 @@ export const SubscriptionsContent = ({
           const status = STATUS_META[subscription.status] || STATUS_META.active;
           const accountName =
             accounts.find((account) => account.id === subscription.accountId)?.name ||
-            "вЂ”";
+            "—";
           const avatarText = String(subscription.name || "S").trim().charAt(0).toUpperCase();
 
           return (
@@ -261,10 +264,10 @@ export const SubscriptionsContent = ({
                         whiteSpace: "nowrap",
                       }}
                     >
-                      {subscription.name || "Р‘РµР· РЅР°Р·РІР°РЅРёСЏ"}
+                      {subscription.name || "Без названия"}
                     </div>
                     <div style={{ fontSize: 12, color: "var(--text-secondary)" }}>
-                      {accountName} вЂў {subscription.cycle || "month"}
+                      {accountName} • {subscription.cycle || "month"}
                     </div>
                   </div>
                 </div>
@@ -304,23 +307,26 @@ export const SubscriptionsContent = ({
 
                 <div style={{ display: "flex", gap: 6 }}>
                   <button
+                    type="button"
                     onClick={() => onMarkPaid(subscription)}
-                    title="РћС‚РјРµС‚РёС‚СЊ РѕРїР»Р°С‚Сѓ"
+                    title="Отметить оплату"
                     style={iconBtnStyle}
                     disabled={!subscription.isActive}
                   >
                     <CheckCircle2 size={14} />
                   </button>
                   <button
+                    type="button"
                     onClick={() => onEdit(subscription)}
-                    title="Р РµРґР°РєС‚РёСЂРѕРІР°С‚СЊ"
+                    title="Редактировать"
                     style={iconBtnStyle}
                   >
                     <Pencil size={14} />
                   </button>
                   <button
+                    type="button"
                     onClick={() => onArchive(subscription)}
-                    title="Р’ Р°СЂС…РёРІ"
+                    title="В архив"
                     style={iconBtnStyle}
                   >
                     <Trash2 size={14} />
@@ -336,7 +342,7 @@ export const SubscriptionsContent = ({
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <CalendarClock size={16} />
           <div style={{ fontSize: 13 }}>
-            РџР»Р°С‚РµР¶Рё СЃРѕ СЃРІСЏР·Р°РЅРЅРѕР№ РѕРїРµСЂР°С†РёРµР№ Р°РІС‚РѕРјР°С‚РёС‡РµСЃРєРё РїРѕР»СѓС‡Р°СЋС‚ СЃС‚Р°С‚СѓСЃ "РћРїР»Р°С‡РµРЅР°".
+            Платежи со связанной операцией автоматически получают статус "Оплачена".
           </div>
         </div>
       </SurfaceCard>

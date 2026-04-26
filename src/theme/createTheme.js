@@ -1,9 +1,15 @@
 export const createTheme = (primary = "blue") => {
   const colorsMap = {
     blue: "#3b82f6",
-    purple: "#8b5cf6",
     green: "#22c55e",
+    purple: "#a855f7",
+    orange: "#f97316",
     red: "#ef4444",
+    pink: "#ec4899",
+    cyan: "#06b6d4",
+    yellow: "#eab308",
+    indigo: "#6366f1",
+    teal: "#14b8a6",
   };
 
   const main = colorsMap[primary] || primary;

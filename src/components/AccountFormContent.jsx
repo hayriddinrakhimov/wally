@@ -1,5 +1,7 @@
-﻿import { useCallback, useEffect } from "react";
+import { useCallback, useEffect, useMemo } from "react";
 import { useTheme } from "../theme/useTheme";
+import { useCurrency } from "../context/useCurrency";
+import { normalizeColor, toCardGradient } from "../utils/colors";
 
 export const AccountFormContent = ({
   account,
@@ -9,10 +11,17 @@ export const AccountFormContent = ({
   onChange,
 }) => {
   const theme = useTheme();
+  const { watchlist, baseCurrency } = useCurrency();
 
   const name = account?.name || "";
   const currency = account?.currency || "KZT";
   const type = account?.type || "card";
+  const safeColor = normalizeColor(color, "#3b82f6");
+
+  const currencyOptions = useMemo(
+    () => Array.from(new Set([baseCurrency, ...(watchlist || []), currency])).filter(Boolean),
+    [baseCurrency, watchlist, currency]
+  );
 
   const handleSubmit = useCallback(() => {
     if (!name.trim()) return;
@@ -20,9 +29,9 @@ export const AccountFormContent = ({
     onSave({
       ...(account || {}),
       name: name.trim(),
-      color,
+      color: safeColor,
     });
-  }, [name, onSave, account, color]);
+  }, [name, onSave, account, safeColor]);
 
   useEffect(() => {
     const handler = () => handleSubmit();
@@ -39,7 +48,7 @@ export const AccountFormContent = ({
         <PreviewCard
           name={name || "Название счета"}
           currency={currency}
-          color={color}
+          color={safeColor}
           type={type}
         />
 
@@ -133,9 +142,11 @@ export const AccountFormContent = ({
                 color: theme.colors.text,
               }}
             >
-              <option value="KZT">KZT</option>
-              <option value="USD">USD</option>
-              <option value="RUB">RUB</option>
+              {currencyOptions.map((code) => (
+                <option key={code} value={code}>
+                  {code}
+                </option>
+              ))}
             </select>
           }
         />
@@ -146,7 +157,7 @@ export const AccountFormContent = ({
       <Block>
         <Row
           title="Цвет счета"
-          right={<ColorDot color={getColorPreview(color)} />}
+          right={<ColorDot color={safeColor} />}
           onClick={onOpenColorPicker}
         />
       </Block>
@@ -154,23 +165,8 @@ export const AccountFormContent = ({
   );
 };
 
-/* ================= PREVIEW ================= */
-
-const gradients = {
-  blue: "linear-gradient(135deg, #3b82f6, #1e293b)",
-  green: "linear-gradient(135deg, #22c55e, #1e293b)",
-  purple: "linear-gradient(135deg, #a855f7, #1e293b)",
-  orange: "linear-gradient(135deg, #f97316, #1e293b)",
-  red: "linear-gradient(135deg, #ef4444, #1e293b)",
-  pink: "linear-gradient(135deg, #ec4899, #1e293b)",
-  cyan: "linear-gradient(135deg, #06b6d4, #1e293b)",
-  yellow: "linear-gradient(135deg, #eab308, #1e293b)",
-  indigo: "linear-gradient(135deg, #6366f1, #1e293b)",
-  teal: "linear-gradient(135deg, #14b8a6, #1e293b)",
-};
-
 const PreviewCard = ({ name, currency, color, type }) => {
-  const bg = gradients[color] || gradients.blue;
+  const bg = toCardGradient(color);
 
   return (
     <div
@@ -203,17 +199,11 @@ const PreviewCard = ({ name, currency, color, type }) => {
       </div>
 
       <div style={{ fontSize: 12, opacity: 0.7 }}>
-        {type === "card"
-          ? "**** 1234"
-          : type === "deposit"
-          ? "Ставка 10%"
-          : "Наличные"}
+        {type === "card" ? "**** 1234" : type === "deposit" ? "Ставка 10%" : "Наличные"}
       </div>
     </div>
   );
 };
-
-/* ================= UI HELPERS ================= */
 
 const SectionTitle = ({ children }) => {
   const theme = useTheme();
@@ -260,9 +250,7 @@ const Row = ({ title, right, onClick }) => {
         cursor: onClick ? "pointer" : "default",
       }}
     >
-      <div style={{ color: theme.colors.text, fontWeight: 500 }}>
-        {title}
-      </div>
+      <div style={{ color: theme.colors.text, fontWeight: 500 }}>{title}</div>
       {right}
     </div>
   );
@@ -274,12 +262,10 @@ const ColorDot = ({ color }) => (
       width: 16,
       height: 16,
       borderRadius: "50%",
-      background: color,
+      background: normalizeColor(color, "#3b82f6"),
     }}
   />
 );
-
-/* ================= UTILS ================= */
 
 function getCurrencySymbol(currency) {
   switch (currency) {
@@ -290,21 +276,4 @@ function getCurrencySymbol(currency) {
     default:
       return "₸";
   }
-}
-
-function getColorPreview(color) {
-  const map = {
-    blue: "#3b82f6",
-    green: "#22c55e",
-    purple: "#a855f7",
-    orange: "#f97316",
-    red: "#ef4444",
-    pink: "#ec4899",
-    cyan: "#06b6d4",
-    yellow: "#eab308",
-    indigo: "#6366f1",
-    teal: "#14b8a6",
-  };
-
-  return map[color] || map.blue;
 }

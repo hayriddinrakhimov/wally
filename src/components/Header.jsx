@@ -6,6 +6,7 @@ export const Header = ({
   onOpenNotifications,
   hasUnread,
   disabled,
+  icon: HeaderIcon = Wallet,
   title = "Wally",
   subtitle = "Ваш личный кошелек",
 }) => {
@@ -14,6 +15,21 @@ export const Header = ({
   const colors = theme.colors || {};
   const spacing = theme.spacing || {};
   const sizes = theme.sizes || {};
+
+  const actionButtonStyle = {
+    position: "relative",
+    width: 36,
+    height: 36,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    cursor: "pointer",
+    WebkitTapHighlightColor: "transparent",
+    border: "none",
+    background: "transparent",
+    borderRadius: 10,
+    padding: 0,
+  };
 
   return (
     <header
@@ -45,7 +61,7 @@ export const Header = ({
             justifyContent: "center",
           }}
         >
-          <Wallet size={18} color="#fff" />
+          <HeaderIcon size={18} color="#fff" />
         </div>
 
         <div style={{ display: "flex", flexDirection: "column" }}>
@@ -73,18 +89,12 @@ export const Header = ({
       </div>
 
       <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-        <div
+        <button
+          type="button"
+          title="Уведомления"
+          aria-label="Открыть уведомления"
           onClick={onOpenNotifications}
-          style={{
-            position: "relative",
-            width: 36,
-            height: 36,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            cursor: "pointer",
-            WebkitTapHighlightColor: "transparent",
-          }}
+          style={actionButtonStyle}
         >
           <Bell size={20} color={colors.text || "#000"} />
 
@@ -101,22 +111,17 @@ export const Header = ({
               }}
             />
           )}
-        </div>
+        </button>
 
-        <div
+        <button
+          type="button"
+          title="Настройки"
+          aria-label="Открыть настройки"
           onClick={onOpenSettings}
-          style={{
-            width: 36,
-            height: 36,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            cursor: "pointer",
-            WebkitTapHighlightColor: "transparent",
-          }}
+          style={actionButtonStyle}
         >
           <Settings size={20} color={colors.text || "#000"} />
-        </div>
+        </button>
       </div>
     </header>
   );

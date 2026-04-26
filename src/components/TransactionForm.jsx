@@ -148,7 +148,7 @@ export const TransactionForm = ({
           (draft.from || draft.fromAccountId || draft.to || draft.toAccountId)
       )?.currency || baseCurrency;
 
-    return accountCurrency || "KZT";
+    return accountCurrency || baseCurrency || "KZT";
   });
 
   const fromValue = accounts.some((account) => account.id === from)
@@ -164,10 +164,10 @@ export const TransactionForm = ({
     return accounts.find((account) => account.id !== fromValue)?.id || rawToValue;
   }, [type, accounts, fromValue, rawToValue]);
 
-  const currencyOptions = useMemo(() => {
-    const set = new Set([baseCurrency, ...(watchlist || []), currency, "KZT"]);
-    return Array.from(set).filter(Boolean);
-  }, [baseCurrency, watchlist, currency]);
+  const currencyOptions = useMemo(
+    () => Array.from(new Set([baseCurrency, ...(watchlist || []), currency])).filter(Boolean),
+    [baseCurrency, watchlist, currency]
+  );
 
   const resolvedCategoryId = useMemo(() => {
     if (type === "transfer") return "transfer";

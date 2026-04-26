@@ -16,6 +16,7 @@ export const IconButton = ({
 
   return (
     <button
+      type="button"
       onClick={onClick}
       disabled={disabled}
       style={{

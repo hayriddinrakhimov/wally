@@ -3,7 +3,7 @@ import { ThemeContext } from "./ThemeContext";
 import { createTheme } from "./createTheme";
 
 export const ThemeProvider = ({ children }) => {
-  const [primary, setPrimary] = useState("blue");
+  const [primary, setPrimary] = useState("#3b82f6");
   const theme = useMemo(() => createTheme(primary), [primary]);
 
   return (

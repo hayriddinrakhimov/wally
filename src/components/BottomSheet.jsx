@@ -1,24 +1,45 @@
-﻿// eslint-disable-next-line no-unused-vars
-import { motion, AnimatePresence, useMotionValue } from "framer-motion";
+﻿import {
+  motion as Motion,
+  AnimatePresence,
+  useDragControls,
+  useMotionValue,
+} from "framer-motion";
+import { useEffect } from "react";
 
-export const BottomSheet = ({
+const BottomSheet = ({
   open,
   onClose,
   title,
   children,
-  footer, // рџ”Ґ РЅРѕРІС‹Р№ РїСЂРѕРї
+  footer,
 }) => {
   const y = useMotionValue(0);
+  const dragControls = useDragControls();
 
-  const SHEET_HEIGHT = window.innerHeight * 0.85;
-  const CLOSE_THRESHOLD = SHEET_HEIGHT * 0.25;
+  const sheetHeight =
+    typeof window === "undefined"
+      ? 640
+      : Math.max(420, Math.round(window.innerHeight * 0.85));
+
+  const closeThreshold = Math.round(sheetHeight * 0.25);
+
+  useEffect(() => {
+    if (!open || typeof document === "undefined") return undefined;
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [open]);
 
   return (
     <AnimatePresence>
       {open && (
         <>
           {/* BACKDROP */}
-          <motion.div
+          <Motion.div
             onClick={onClose}
             initial={{ opacity: 0 }}
             animate={{ opacity: 0.4 }}
@@ -27,13 +48,15 @@ export const BottomSheet = ({
               position: "fixed",
               inset: 0,
               background: "black",
-              zIndex: 50,
+              zIndex: 120,
             }}
           />
 
           {/* SHEET */}
-          <motion.div
+          <Motion.div
             drag="y"
+            dragControls={dragControls}
+            dragListener={false}
             dragConstraints={{ top: 0 }}
             dragElastic={0.2}
             style={{
@@ -42,17 +65,14 @@ export const BottomSheet = ({
               bottom: 0,
               left: 0,
               right: 0,
-
-              height: "85vh",
+              height: sheetHeight,
               display: "flex",
               flexDirection: "column",
-
               background: "white",
               borderTopLeftRadius: 20,
               borderTopRightRadius: 20,
-              zIndex: 100,
+              zIndex: 130,
               overflow: "hidden",
-              touchAction: "none",
             }}
             initial={{ y: "100%" }}
             animate={{ y: 0 }}
@@ -62,21 +82,26 @@ export const BottomSheet = ({
               const offset = info.offset.y;
               const velocity = info.velocity.y;
 
-              if (offset > CLOSE_THRESHOLD || velocity > 800) {
+              if (offset > closeThreshold || velocity > 800) {
                 onClose();
               } else {
                 y.set(0);
               }
             }}
+            role="dialog"
+            aria-modal="true"
           >
             {/* HANDLE */}
             <div
+              onPointerDown={(event) => dragControls.start(event)}
               style={{
                 width: 40,
                 height: 4,
                 borderRadius: 2,
                 background: "#ddd",
                 margin: "8px auto",
+                cursor: "grab",
+                touchAction: "none",
               }}
             />
 
@@ -97,13 +122,15 @@ export const BottomSheet = ({
               style={{
                 flex: 1,
                 overflowY: "auto",
-                padding: "0 16px 16px", // С‡СѓС‚СЊ РјРµРЅСЊС€Рµ, С‡С‚РѕР±С‹ РЅРµ Р»РёРїР»Рѕ Рє С„СѓС‚РµСЂСѓ
+                WebkitOverflowScrolling: "touch",
+                overscrollBehavior: "contain",
+                padding: "0 16px 16px",
               }}
             >
               {children}
             </div>
 
-            {/* рџ”Ґ FOOTER (РєРЅРѕРїРєР° РІСЃРµРіРґР° СЃРЅРёР·Сѓ) */}
+            {/* FOOTER */}
             {footer && (
               <div
                 style={{
@@ -116,9 +143,12 @@ export const BottomSheet = ({
                 {footer}
               </div>
             )}
-          </motion.div>
+          </Motion.div>
         </>
       )}
     </AnimatePresence>
   );
 };
+
+export { BottomSheet };
+export default BottomSheet;

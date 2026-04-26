@@ -1,15 +1,16 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { formatDateInput } from "../utils/dateRanges";
 import { GOAL_FREQUENCY_OPTIONS } from "../utils/financeSelectors";
+import { useCurrency } from "../context/useCurrency";
 
-const createDefaultDraft = (accounts = []) => {
+const createDefaultDraft = (accounts = [], defaultCurrency = "KZT") => {
   const now = Date.now();
   const target = now + 1000 * 60 * 60 * 24 * 90;
 
   return {
     title: "",
     targetAmount: "",
-    currency: "KZT",
+    currency: defaultCurrency,
     startDate: now,
     targetDate: target,
     plannedContribution: "",
@@ -26,6 +27,7 @@ export const DepositGoalFormContent = ({
   onSave,
   onDelete,
 }) => {
+  const { watchlist, baseCurrency } = useCurrency();
   const [form, setForm] = useState(() =>
     goal
       ? {
@@ -33,7 +35,14 @@ export const DepositGoalFormContent = ({
           targetAmount: String(goal.targetAmount ?? ""),
           plannedContribution: String(goal.plannedContribution ?? ""),
         }
-      : createDefaultDraft(accounts)
+      : createDefaultDraft(accounts, baseCurrency)
+  );
+  const currencyOptions = useMemo(
+    () =>
+      Array.from(new Set([baseCurrency, ...(watchlist || []), form.currency])).filter(
+        Boolean
+      ),
+    [baseCurrency, watchlist, form.currency]
   );
 
   const canDelete = useMemo(() => Boolean(goal?.id), [goal?.id]);
@@ -84,9 +93,11 @@ export const DepositGoalFormContent = ({
             }
             style={inputStyle}
           >
-            <option value="KZT">KZT</option>
-            <option value="USD">USD</option>
-            <option value="RUB">RUB</option>
+            {currencyOptions.map((code) => (
+              <option key={code} value={code}>
+                {code}
+              </option>
+            ))}
           </select>
         </Field>
       </Row>
@@ -202,6 +213,7 @@ export const DepositGoalFormContent = ({
 
       {canDelete && (
         <button
+          type="button"
           onClick={() => onDelete(goal.id)}
           style={{
             height: 40,

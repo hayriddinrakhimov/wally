@@ -66,6 +66,9 @@ const FLOW_TONES = {
   },
 };
 
+const CHART_FONT_FAMILY =
+  "'Manrope', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans', 'Segoe UI Symbol', Arial, sans-serif";
+
 const calcTrend = (current, previous) => {
   if (!Number.isFinite(current) || !Number.isFinite(previous) || previous === 0) {
     return null;
@@ -245,6 +248,9 @@ export const AnalyticsContent = ({ transactions = [] }) => {
     backgroundColor: "rgba(15, 23, 42, 0.92)",
     titleColor: "#e2e8f0",
     bodyColor: "#f8fafc",
+    titleFont: { family: CHART_FONT_FAMILY, weight: "700" },
+    bodyFont: { family: CHART_FONT_FAMILY, weight: "500" },
+    footerFont: { family: CHART_FONT_FAMILY, weight: "600" },
     borderColor: "rgba(148, 163, 184, 0.45)",
     borderWidth: 1,
     cornerRadius: 10,
@@ -265,6 +271,7 @@ export const AnalyticsContent = ({ transactions = [] }) => {
           boxHeight: 8,
           padding: 16,
           font: {
+            family: CHART_FONT_FAMILY,
             size: 11,
             weight: "600",
           },
@@ -287,6 +294,7 @@ export const AnalyticsContent = ({ transactions = [] }) => {
           boxHeight: 8,
           padding: 14,
           font: {
+            family: CHART_FONT_FAMILY,
             size: 11,
             weight: "600",
           },
@@ -299,7 +307,7 @@ export const AnalyticsContent = ({ transactions = [] }) => {
         grid: { display: false },
         ticks: {
           color: axisColor,
-          font: { size: 10, weight: "600" },
+          font: { family: CHART_FONT_FAMILY, size: 10, weight: "600" },
           maxRotation: 0,
           minRotation: 0,
         },
@@ -309,7 +317,7 @@ export const AnalyticsContent = ({ transactions = [] }) => {
         grid: { color: gridColor },
         ticks: {
           color: axisColor,
-          font: { size: 10 },
+          font: { family: CHART_FONT_FAMILY, size: 10 },
         },
       },
     },

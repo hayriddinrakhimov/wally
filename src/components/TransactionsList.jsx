@@ -1,19 +1,33 @@
-﻿import { useMemo } from "react";
+import { useMemo } from "react";
+import {
+  ArrowLeftRight,
+  Car,
+  Coffee,
+  Gamepad2,
+  Gift,
+  Heart,
+  Home,
+  ShoppingCart,
+  Sparkles,
+  Wallet,
+} from "lucide-react";
 import { categories as staticCategories } from "../data/categories";
 import { useLocalStorage } from "../hooks/useLocalStorage";
 import { getTransactionColor } from "../utils/getTransactionColor";
 import { formatMoneySmart } from "../utils/formatMoney";
 
-const CATEGORY_EMOJI_BY_ICON = {
-  shopping: "🛒",
-  coffee: "☕",
-  car: "🚕",
-  wallet: "💰",
-  gift: "🎁",
-  home: "🏠",
-  game: "🎮",
-  health: "❤️",
-  sparkles: "✨",
+const CATEGORY_ICON_BY_KEY = {
+  shopping: ShoppingCart,
+  coffee: Coffee,
+  car: Car,
+  wallet: Wallet,
+  gift: Gift,
+  home: Home,
+  game: Gamepad2,
+  health: Heart,
+  sparkles: Sparkles,
+  transfer: ArrowLeftRight,
+  transport: Car,
 };
 
 const defaultCategories = {
@@ -21,9 +35,17 @@ const defaultCategories = {
     { key: "food", label: "Еда", color: "#60a5fa", iconKey: "shopping" },
     { key: "taxi", label: "Такси", color: "#f59e0b", iconKey: "car" },
   ],
-  income: [
-    { key: "salary", label: "Зарплата", color: "#22c55e", iconKey: "wallet" },
-  ],
+  income: [{ key: "salary", label: "Зарплата", color: "#22c55e", iconKey: "wallet" }],
+};
+
+const resolveIcon = (iconKey, type) => {
+  if (type === "transfer") return ArrowLeftRight;
+
+  const key = String(iconKey || "")
+    .trim()
+    .toLowerCase();
+
+  return CATEGORY_ICON_BY_KEY[key] || Sparkles;
 };
 
 const createCategoryMap = (customCategories) => {
@@ -33,7 +55,7 @@ const createCategoryMap = (customCategories) => {
     map.set(String(category.id), {
       id: String(category.id),
       name: category.name,
-      icon: category.icon || "✨",
+      iconKey: category.iconKey || category.id,
       color: category.color,
       type: category.type,
     });
@@ -47,7 +69,7 @@ const createCategoryMap = (customCategories) => {
       map.set(id, {
         id,
         name: String(category?.label || "").trim() || id,
-        icon: CATEGORY_EMOJI_BY_ICON[category?.iconKey] || "✨",
+        iconKey: String(category?.iconKey || "").trim() || "sparkles",
         color: category?.color || "#a78bfa",
         type,
       });
@@ -57,11 +79,7 @@ const createCategoryMap = (customCategories) => {
   return map;
 };
 
-export const TransactionsList = ({
-  transactions = [],
-  accounts = [],
-  onPress,
-}) => {
+export const TransactionsList = ({ transactions = [], accounts = [], onPress }) => {
   const [customCategories] = useLocalStorage("categories_v3", defaultCategories);
 
   const categoryMap = useMemo(
@@ -85,7 +103,7 @@ export const TransactionsList = ({
   }
 
   const getAccountName = (id) =>
-    accounts.find((account) => account.id === id)?.name || "—";
+    accounts.find((account) => account.id === id)?.name || "-";
 
   const getTypeLabel = (type) => {
     switch (type) {
@@ -111,14 +129,19 @@ export const TransactionsList = ({
 
         const category = getCategory(categoryId);
         const isTransfer = transaction.type === "transfer";
-        const categoryBadge = isTransfer ? "🔄" : category?.icon || "✨";
+        const Icon = resolveIcon(category?.iconKey, transaction.type);
+        const iconColor = category?.color || "var(--primary)";
+        const iconBackground =
+          typeof category?.color === "string" && category.color.startsWith("#")
+            ? `${category.color}22`
+            : "rgba(59, 130, 246, 0.14)";
+
         const amountLabel = formatMoneySmart(
           transaction.amount,
           transaction.currency || "KZT"
         );
 
         const typeLabel = getTypeLabel(transaction.type);
-
         const title = isTransfer
           ? "Перевод"
           : `${typeLabel}: ${category?.name || "Без категории"}`;
@@ -137,31 +160,39 @@ export const TransactionsList = ({
               marginBottom: 10,
               color: "var(--text)",
               cursor: "pointer",
+              gap: 10,
             }}
           >
-            <div style={{ display: "flex", flexDirection: "column" }}>
-              <div
+            <div style={{ display: "flex", alignItems: "flex-start", gap: 10, minWidth: 0 }}>
+              <span
                 style={{
-                  fontWeight: 600,
-                  color: "var(--text)",
+                  width: 30,
+                  height: 30,
+                  borderRadius: 10,
+                  background: iconBackground,
+                  color: iconColor,
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  flexShrink: 0,
                 }}
               >
-                {categoryBadge} {title}
-              </div>
+                <Icon size={15} />
+              </span>
 
-              <div
-                style={{
-                  fontSize: 12,
-                  marginTop: 3,
-                  color: "var(--text-secondary)",
-                }}
-              >
-                {isTransfer
-                  ? `${getAccountName(from)} > ${getAccountName(to)}`
-                  : getAccountName(from || to)}
-              </div>
+              <div style={{ display: "flex", flexDirection: "column", minWidth: 0 }}>
+                <div
+                  style={{
+                    fontWeight: 600,
+                    color: "var(--text)",
+                    whiteSpace: "nowrap",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                  }}
+                >
+                  {title}
+                </div>
 
-              {transaction.note && (
                 <div
                   style={{
                     fontSize: 12,
@@ -169,12 +200,29 @@ export const TransactionsList = ({
                     color: "var(--text-secondary)",
                   }}
                 >
-                  {transaction.note}
+                  {isTransfer
+                    ? `${getAccountName(from)} > ${getAccountName(to)}`
+                    : getAccountName(from || to)}
                 </div>
-              )}
+
+                {transaction.note && (
+                  <div
+                    style={{
+                      fontSize: 12,
+                      marginTop: 3,
+                      color: "var(--text-secondary)",
+                      whiteSpace: "nowrap",
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                    }}
+                  >
+                    {transaction.note}
+                  </div>
+                )}
+              </div>
             </div>
 
-            <div style={{ textAlign: "right" }}>
+            <div style={{ textAlign: "right", flexShrink: 0 }}>
               <div
                 style={{
                   fontWeight: 700,
