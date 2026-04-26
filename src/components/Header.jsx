@@ -1,5 +1,5 @@
-import { Bell, Settings, Wallet } from "lucide-react";
-import { useTheme } from "../theme/ThemeProvider";
+﻿import { Bell, Settings, Wallet } from "lucide-react";
+import { useTheme } from "../theme/useTheme";
 
 export const Header = ({
   onOpenSettings,
@@ -19,32 +19,25 @@ export const Header = ({
         position: "sticky",
         top: 0,
         zIndex: 50,
-
-        height: sizes.headerHeight || 70, // 👈 фикс высота
+        height: sizes.headerHeight || 70,
         padding: `0 ${spacing.lg || 16}px`,
-
         display: "flex",
         alignItems: "center",
         justifyContent: "space-between",
-
         borderBottom: `1px solid ${colors.border || "#e5e7eb"}`,
         background: colors.background || "#fff",
-
         transition: "opacity 0.2s ease",
         opacity: disabled ? 0.4 : 1,
         pointerEvents: disabled ? "none" : "auto",
       }}
     >
-      {/* LEFT */}
       <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
         <div
           style={{
             width: 36,
             height: 36,
             borderRadius: 10,
-            background: `linear-gradient(135deg, ${
-              colors.primary || "#3b82f6"
-            }, #000)`,
+            background: `linear-gradient(135deg, ${colors.primary || "#3b82f6"}, #000)`,
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
@@ -77,7 +70,6 @@ export const Header = ({
         </div>
       </div>
 
-      {/* RIGHT */}
       <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
         <div
           onClick={onOpenNotifications}

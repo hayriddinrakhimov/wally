@@ -1,38 +1,29 @@
-import { createContext, useContext, useState } from "react";
+﻿import { useMemo, useState } from "react";
+import { ThemeContext } from "./ThemeContext";
 import { createTheme } from "./createTheme";
-
-const ThemeContext = createContext(null);
 
 export const ThemeProvider = ({ children }) => {
   const [primary, setPrimary] = useState("blue");
-
-  const theme = createTheme(primary);
-
-  // защита от undefined theme
-  if (!theme || !theme.colors) {
-    return null;
-  }
+  const theme = useMemo(() => createTheme(primary), [primary]);
 
   return (
     <ThemeContext.Provider value={{ theme, setPrimary }}>
       <div
         style={{
-          /* ===== CSS VARIABLES ===== */
           "--primary": theme.colors.primary || "#3b82f6",
           "--bg": theme.colors.background || "#ffffff",
+          "--bg-secondary":
+            theme.colors.backgroundSecondary || "#f9fafb",
           "--text": theme.colors.text || "#111111",
           "--text-secondary":
             theme.colors.secondaryText || "#6b7280",
           "--border": theme.colors.border || "#e5e7eb",
           "--danger": theme.colors.danger || "#ef4444",
-
-          /* ===== BASE STYLES ===== */
+          "--font-main":
+            "system-ui, -apple-system, Segoe UI, Roboto, sans-serif",
           background: "var(--bg)",
           color: "var(--text)",
-
-          /* 🔥 ВАЖНО: фикс шрифта */
           fontFamily: "var(--font-main)",
-
           minHeight: "100vh",
         }}
       >
@@ -40,30 +31,4 @@ export const ThemeProvider = ({ children }) => {
       </div>
     </ThemeContext.Provider>
   );
-};
-
-/* ===================== HOOKS ===================== */
-
-export const useTheme = () => {
-  const context = useContext(ThemeContext);
-
-  if (!context) {
-    throw new Error(
-      "useTheme must be used within ThemeProvider"
-    );
-  }
-
-  return context.theme;
-};
-
-export const useSetPrimary = () => {
-  const context = useContext(ThemeContext);
-
-  if (!context) {
-    throw new Error(
-      "useSetPrimary must be used within ThemeProvider"
-    );
-  }
-
-  return context.setPrimary;
 };

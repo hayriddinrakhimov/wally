@@ -1,19 +1,18 @@
-import { useTheme } from "../theme/ThemeProvider";
+﻿import { useTheme } from "../theme/useTheme";
 
 export const NotificationsContent = ({
   notifications,
   onClick,
   markAllAsRead,
 }) => {
-  const theme = useTheme(); // ✅ правильно
+  const theme = useTheme();
 
-  const sorted = [...(notifications || [])].sort(
-    (a, b) => b.time - a.time
-  );
+  const list = Array.isArray(notifications) ? notifications : [];
+
+  const sorted = [...list].sort((a, b) => b.time - a.time);
 
   return (
     <div>
-      {/* ACTION BAR */}
       <div
         style={{
           display: "flex",
@@ -22,20 +21,19 @@ export const NotificationsContent = ({
         }}
       >
         <button
-          onClick={markAllAsRead}
+          onClick={() => markAllAsRead?.()}
           style={{
             background: "transparent",
             border: "none",
             cursor: "pointer",
             color: theme.colors.primary,
-            fontSize: theme.font.body,
+            fontSize: theme.font?.body || 14,
           }}
         >
           Прочитать все
         </button>
       </div>
 
-      {/* EMPTY */}
       {sorted.length === 0 && (
         <div
           style={{
@@ -44,52 +42,39 @@ export const NotificationsContent = ({
             padding: theme.spacing.xl,
           }}
         >
-          <div
-            style={{
-              color: theme.colors.secondaryText,
-            }}
-          >
+          <div style={{ color: theme.colors.secondaryText }}>
             Нет новых уведомлений
           </div>
         </div>
       )}
 
-      {/* LIST */}
-      {sorted.map((n) => (
+      {sorted.map((notification) => (
         <div
-          key={n.id}
-          onClick={() => onClick(n)}
+          key={notification.id}
+          onClick={() => onClick?.(notification)}
           style={{
             display: "flex",
             alignItems: "center",
             gap: theme.spacing.sm,
-
             padding: theme.spacing.md,
             borderBottom: `1px solid ${theme.colors.border}`,
-
             cursor: "pointer",
             transition: "transform 0.1s ease",
-            opacity: n.read ? 0.5 : 1,
+            opacity: notification.read ? 0.5 : 1,
           }}
-          onMouseDown={(e) =>
-            (e.currentTarget.style.transform = "scale(0.98)")
-          }
-          onMouseUp={(e) =>
-            (e.currentTarget.style.transform = "scale(1)")
-          }
-          onMouseLeave={(e) =>
-            (e.currentTarget.style.transform = "scale(1)")
-          }
+          onMouseDown={(event) => {
+            event.currentTarget.style.transform = "scale(0.98)";
+          }}
+          onMouseUp={(event) => {
+            event.currentTarget.style.transform = "scale(1)";
+          }}
+          onMouseLeave={(event) => {
+            event.currentTarget.style.transform = "scale(1)";
+          }}
         >
-          {/* TEXT */}
           <div style={{ flex: 1 }}>
-            <div
-              style={{
-                color: theme.colors.text,
-                fontWeight: "500",
-              }}
-            >
-              {n.title}
+            <div style={{ color: theme.colors.text, fontWeight: "500" }}>
+              {notification.title}
             </div>
 
             <div
@@ -99,12 +84,11 @@ export const NotificationsContent = ({
                 marginTop: "2px",
               }}
             >
-              {formatTime(n.time)}
+              {formatTime(notification.time)}
             </div>
           </div>
 
-          {/* DOT */}
-          {!n.read && (
+          {!notification.read && (
             <div
               style={{
                 width: "6px",
@@ -119,8 +103,6 @@ export const NotificationsContent = ({
     </div>
   );
 };
-
-/* ===== УТИЛКА ===== */
 
 const formatTime = (timestamp) => {
   const date = new Date(timestamp);

@@ -1,36 +1,30 @@
-import { useState, useMemo } from "react";
-import { useCurrency } from "../context/CurrencyProvider";
+﻿import { useMemo, useState } from "react";
+import { useCurrency } from "../context/useCurrency";
 
 export const CurrencyPickerContent = () => {
-  const { watchlist, addCurrency, removeCurrency, rates } =
-    useCurrency();
-
+  const { watchlist, addCurrency, removeCurrency, rates } = useCurrency();
   const [query, setQuery] = useState("");
 
-  /* ===== ВСЕ ВАЛЮТЫ ИЗ API ===== */
   const allCurrencies = useMemo(() => {
     if (!rates) return [];
-
     return Object.keys(rates).sort();
   }, [rates]);
 
-  /* ===== ФИЛЬТР ПО ПОИСКУ ===== */
   const filtered = useMemo(() => {
     if (!query) return allCurrencies;
 
-    return allCurrencies.filter((c) =>
-      c.toLowerCase().includes(query.toLowerCase())
+    return allCurrencies.filter((currency) =>
+      currency.toLowerCase().includes(query.toLowerCase())
     );
   }, [query, allCurrencies]);
 
-  /* ===== СОРТИРОВКА: избранные сверху ===== */
   const sorted = useMemo(() => {
     return [...filtered].sort((a, b) => {
-      const aFav = watchlist.includes(a);
-      const bFav = watchlist.includes(b);
+      const aInWatchlist = watchlist.includes(a);
+      const bInWatchlist = watchlist.includes(b);
 
-      if (aFav && !bFav) return -1;
-      if (!aFav && bFav) return 1;
+      if (aInWatchlist && !bInWatchlist) return -1;
+      if (!aInWatchlist && bInWatchlist) return 1;
 
       return a.localeCompare(b);
     });
@@ -38,10 +32,9 @@ export const CurrencyPickerContent = () => {
 
   return (
     <div style={{ paddingBottom: 20 }}>
-      {/* SEARCH */}
       <input
         value={query}
-        onChange={(e) => setQuery(e.target.value)}
+        onChange={(event) => setQuery(event.target.value)}
         placeholder="Поиск валюты..."
         style={{
           width: "100%",
@@ -53,16 +46,15 @@ export const CurrencyPickerContent = () => {
         }}
       />
 
-      {/* LIST */}
       {sorted.length === 0 ? (
         <div style={{ opacity: 0.6 }}>Нет валют</div>
       ) : (
-        sorted.map((cur) => {
-          const active = watchlist.includes(cur);
+        sorted.map((currency) => {
+          const active = watchlist.includes(currency);
 
           return (
             <div
-              key={cur}
+              key={currency}
               style={{
                 display: "flex",
                 justifyContent: "space-between",
@@ -71,13 +63,13 @@ export const CurrencyPickerContent = () => {
                 borderBottom: "1px solid #f3f3f3",
               }}
             >
-              <div style={{ fontWeight: 600 }}>{cur}</div>
+              <div style={{ fontWeight: 600 }}>{currency}</div>
 
               <button
                 onClick={() =>
                   active
-                    ? removeCurrency(cur)
-                    : addCurrency(cur)
+                    ? removeCurrency(currency)
+                    : addCurrency(currency)
                 }
                 style={{
                   border: "none",
@@ -85,9 +77,7 @@ export const CurrencyPickerContent = () => {
                   borderRadius: 10,
                   fontSize: 12,
                   cursor: "pointer",
-                  background: active
-                    ? "#ef4444"
-                    : "var(--primary)",
+                  background: active ? "#ef4444" : "var(--primary)",
                   color: "white",
                 }}
               >

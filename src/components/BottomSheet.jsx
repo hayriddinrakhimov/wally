@@ -1,3 +1,4 @@
+﻿// eslint-disable-next-line no-unused-vars
 import { motion, AnimatePresence, useMotionValue } from "framer-motion";
 
 export const BottomSheet = ({
@@ -5,7 +6,7 @@ export const BottomSheet = ({
   onClose,
   title,
   children,
-  footer, // 🔥 новый проп
+  footer, // рџ”Ґ РЅРѕРІС‹Р№ РїСЂРѕРї
 }) => {
   const y = useMotionValue(0);
 
@@ -96,13 +97,13 @@ export const BottomSheet = ({
               style={{
                 flex: 1,
                 overflowY: "auto",
-                padding: "0 16px 16px", // чуть меньше, чтобы не липло к футеру
+                padding: "0 16px 16px", // С‡СѓС‚СЊ РјРµРЅСЊС€Рµ, С‡С‚РѕР±С‹ РЅРµ Р»РёРїР»Рѕ Рє С„СѓС‚РµСЂСѓ
               }}
             >
               {children}
             </div>
 
-            {/* 🔥 FOOTER (кнопка всегда снизу) */}
+            {/* рџ”Ґ FOOTER (РєРЅРѕРїРєР° РІСЃРµРіРґР° СЃРЅРёР·Сѓ) */}
             {footer && (
               <div
                 style={{

@@ -1,72 +1,68 @@
-import { useCurrency } from "../context/CurrencyProvider";
+﻿import { useCurrency } from "../context/useCurrency";
 
 const PRIORITY = ["USD", "EUR", "RUB"];
 
 export const CurrencyWidget = ({ onOpen }) => {
-  const {
-    watchlist,
-    convert,
-    baseCurrency,
-    loading,
-    prevRates,
-    rates,
-  } = useCurrency();
+  const { watchlist, convert, baseCurrency, loading, prevRates, rates } =
+    useCurrency();
 
-  /* ===================== сортировка ===================== */
-  const sorted = [...(watchlist || [])].sort((a, b) => {
-    const ai = PRIORITY.indexOf(a);
-    const bi = PRIORITY.indexOf(b);
+  const sorted = [...(watchlist || [])]
+    .filter((currency) => currency !== baseCurrency)
+    .sort((a, b) => {
+      const ai = PRIORITY.indexOf(a);
+      const bi = PRIORITY.indexOf(b);
 
-    if (ai === -1 && bi === -1) return 0;
-    if (ai === -1) return 1;
-    if (bi === -1) return -1;
+      if (ai === -1 && bi === -1) return a.localeCompare(b);
+      if (ai === -1) return 1;
+      if (bi === -1) return -1;
 
-    return ai - bi;
-  });
+      return ai - bi;
+    })
+    .slice(0, 4);
 
-  /* ===================== тренд ===================== */
-  const getTrend = (cur) => {
-    const now = rates[cur];
-    const prev = prevRates?.[cur];
+  const getTrend = (currency) => {
+    const now = rates[currency];
+    const prev = prevRates?.[currency];
 
     if (!now || !prev) return null;
-
     if (now > prev) return "up";
     if (now < prev) return "down";
     return "flat";
   };
 
-  /* ===================== формат ===================== */
-  const format = (cur) => {
-    const value = convert(1, cur, baseCurrency);
-
-    if (!value || isNaN(value)) return "—";
-
-    // 🔥 умное округление
-    return value < 1 ? value.toFixed(4) : value.toFixed(1);
+  const format = (currency) => {
+    const value = convert(1, currency, baseCurrency);
+    if (!Number.isFinite(value)) return "—";
+    return value < 1 ? value.toFixed(4) : value.toFixed(2);
   };
 
   return (
     <div
       style={{
-        margin: "12px 16px",
-        padding: 16,
+        margin: "8px 16px",
+        padding: 14,
         borderRadius: 16,
         background: "white",
         border: "1px solid #eee",
       }}
     >
-      {/* HEADER */}
       <div
         style={{
           display: "flex",
           justifyContent: "space-between",
-          marginBottom: 12,
+          alignItems: "center",
+          marginBottom: 10,
         }}
       >
-        <div style={{ fontWeight: 600 }}>Курсы валют</div>
+        <div>
+          <div style={{ fontWeight: 700, fontSize: 14 }}>Финансовая погода</div>
+          <div style={{ fontSize: 12, opacity: 0.65 }}>
+            Курс к {baseCurrency}
+          </div>
+        </div>
 
         <button
+          type="button"
           onClick={onOpen}
           style={{
             border: "none",
@@ -75,43 +71,44 @@ export const CurrencyWidget = ({ onOpen }) => {
             padding: "6px 10px",
             borderRadius: 10,
             fontSize: 12,
+            cursor: "pointer",
+            fontWeight: 600,
           }}
         >
           Изменить
         </button>
       </div>
 
-      {/* LOADING */}
       {loading && (
-        <div style={{ fontSize: 13, opacity: 0.6 }}>
-          Обновление...
-        </div>
+        <div style={{ fontSize: 13, opacity: 0.65 }}>Обновление курсов...</div>
       )}
 
-      {/* LIST */}
+      {!loading && sorted.length === 0 && (
+        <div style={{ fontSize: 13, opacity: 0.65 }}>Нет валют для отображения</div>
+      )}
+
       {!loading &&
-        sorted.map((c) => {
-          const trend = getTrend(c);
+        sorted.map((currency) => {
+          const trend = getTrend(currency);
 
           return (
             <div
-              key={c}
+              key={currency}
               style={{
                 display: "flex",
                 justifyContent: "space-between",
                 padding: "6px 0",
+                fontSize: 13,
               }}
             >
-              {/* LEFT */}
               <div style={{ fontWeight: 600 }}>
-                {c}{" "}
-                {trend === "up" && "📈"}
-                {trend === "down" && "📉"}
+                {currency}
+                {trend === "up" && <span style={{ marginLeft: 6 }}>↑</span>}
+                {trend === "down" && <span style={{ marginLeft: 6 }}>↓</span>}
               </div>
 
-              {/* RIGHT */}
               <div>
-                1 {c} = {format(c)} {baseCurrency}
+                1 {currency} = {format(currency)} {baseCurrency}
               </div>
             </div>
           );

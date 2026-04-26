@@ -1,49 +1,31 @@
-import { Plus } from "lucide-react";
+﻿import { Plus } from "lucide-react";
 
 export const AddAccountCard = ({ onClick }) => {
   return (
-    <div
+    <button
+      type="button"
       onClick={onClick}
-      onMouseEnter={(e) => {
-        e.currentTarget.style.transform = "scale(1.04)";
-      }}
-      onMouseLeave={(e) => {
-        e.currentTarget.style.transform = "scale(1)";
-      }}
       style={{
-        height: 160,
-        borderRadius: 20,
-        padding: 18,
-
-        background: "transparent",
-        border: "2px dashed var(--primary)",
-        color: "var(--primary)",
-
+        height: 42,
+        borderRadius: 999,
+        padding: "0 14px",
+        background: "var(--primary)",
+        border: "none",
+        color: "#fff",
         display: "flex",
-        flexDirection: "column",
-        justifyContent: "center",
         alignItems: "center",
-        gap: 10,
-
+        justifyContent: "center",
+        gap: 8,
         cursor: "pointer",
         userSelect: "none",
-
-        transform: "scale(1)",
-        transition: "all 0.2s ease",
+        boxShadow: "0 6px 16px rgba(0,0,0,0.18)",
+        fontWeight: 600,
+        fontSize: 13,
       }}
+      title="Добавить счет"
     >
-      {/* ИКОНКА */}
-      <Plus size={28} />
-
-      {/* ТЕКСТ */}
-      <div
-        style={{
-          fontWeight: 500,
-          fontSize: 14,
-        }}
-      >
-        Добавить счет
-      </div>
-    </div>
+      <Plus size={16} />
+      <span>Добавить счет</span>
+    </button>
   );
 };

@@ -1,9 +1,35 @@
-import { createContext, useContext, useEffect, useState, useCallback } from "react";
+﻿import { useCallback, useEffect, useMemo, useState } from "react";
+import { CurrencyContext } from "./CurrencyContext";
 import { fetchRates } from "../services/currencyService";
 
-const CurrencyContext = createContext(null);
+const RATES_TTL_MS = 1000 * 60 * 60;
+const WATCHLIST_KEY = "currency_watchlist";
+const BASE_CURRENCY_KEY = "baseCurrency";
 
-/* ===================== НОРМАЛИЗАЦИЯ ===================== */
+const normalizeCurrencyCode = (value, fallback = "KZT") => {
+  const normalized = String(value || "")
+    .trim()
+    .toUpperCase()
+    .replace(/[^A-Z]/g, "");
+
+  return normalized.length === 3 ? normalized : fallback;
+};
+
+const parseStoredCurrency = (raw) => {
+  if (!raw) return "KZT";
+
+  try {
+    const parsed = JSON.parse(raw);
+    if (typeof parsed === "string") {
+      return normalizeCurrencyCode(parsed);
+    }
+  } catch {
+    // no-op
+  }
+
+  return normalizeCurrencyCode(raw);
+};
+
 const normalizeRates = (data) => {
   if (!data) return {};
 
@@ -14,10 +40,10 @@ const normalizeRates = (data) => {
       flat[key] = value;
     }
 
-    if (typeof value === "object" && value !== null) {
-      Object.entries(value).forEach(([k, v]) => {
-        if (typeof v === "number") {
-          flat[k] = v;
+    if (value && typeof value === "object") {
+      Object.entries(value).forEach(([nestedKey, nestedValue]) => {
+        if (typeof nestedValue === "number") {
+          flat[nestedKey] = nestedValue;
         }
       });
     }
@@ -26,202 +52,183 @@ const normalizeRates = (data) => {
   return flat;
 };
 
-export const CurrencyProvider = ({
-  baseCurrency = "KZT",
-  children,
-}) => {
+const getRatesCacheKey = (baseCurrency) => `rates_v3_${baseCurrency}`;
+
+const readJson = (key) => {
+  try {
+    const raw = localStorage.getItem(key);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+};
+
+export const CurrencyProvider = ({ children }) => {
+  const [baseCurrency, setBaseCurrencyState] = useState(() =>
+    parseStoredCurrency(localStorage.getItem(BASE_CURRENCY_KEY))
+  );
+
   const [rates, setRates] = useState({});
   const [prevRates, setPrevRates] = useState({});
   const [loading, setLoading] = useState(false);
   const [lastUpdated, setLastUpdated] = useState(null);
 
-  const [watchlist, setWatchlist] = useState([
-    "USD",
-    "EUR",
-    "RUB",
-  ]);
+  const [watchlist, setWatchlist] = useState(() => {
+    const stored = readJson(WATCHLIST_KEY);
 
-  const [internalBaseCurrency, setInternalBaseCurrency] =
-    useState(baseCurrency);
+    if (!Array.isArray(stored) || stored.length === 0) {
+      return ["USD", "EUR", "RUB"];
+    }
 
-  const STORAGE_KEY = "rates_v2";
-  const WATCHLIST_KEY = "currency_watchlist";
+    return stored
+      .map((item) => normalizeCurrencyCode(item, ""))
+      .filter(Boolean);
+  });
 
-  /* ===================== SYNC PROP ===================== */
   useEffect(() => {
-    setInternalBaseCurrency(baseCurrency);
+    localStorage.setItem(BASE_CURRENCY_KEY, baseCurrency);
   }, [baseCurrency]);
 
-  /* ===================== CACHE ===================== */
-  const loadFromCache = () => {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (!raw) return false;
+  useEffect(() => {
+    localStorage.setItem(WATCHLIST_KEY, JSON.stringify(watchlist));
+  }, [watchlist]);
 
-      const parsed = JSON.parse(raw);
+  const loadRates = useCallback(
+    async (force = false) => {
+      const cacheKey = getRatesCacheKey(baseCurrency);
+      setLoading(true);
 
-      const isFresh =
-        Date.now() - parsed.timestamp < 1000 * 60 * 60;
+      try {
+        if (!force) {
+          const cached = readJson(cacheKey);
+          const isFresh =
+            cached?.timestamp && Date.now() - cached.timestamp < RATES_TTL_MS;
 
-      if (isFresh && parsed.rates) {
-        const normalized = normalizeRates(parsed.rates);
-
-        setRates(normalized);
-        setLastUpdated(parsed.timestamp);
-
-        return true;
-      }
-
-      return false;
-    } catch (e) {
-      console.error("Cache error:", e);
-      return false;
-    }
-  };
-
-  /* ===================== LOAD ===================== */
-  const loadRates = async (force = false) => {
-    setLoading(true);
-
-    try {
-      if (!force) {
-        const hasCache = loadFromCache();
-        if (hasCache) {
-          setLoading(false);
-          return;
+          if (isFresh && cached?.rates) {
+            const normalized = normalizeRates(cached.rates);
+            setRates(normalized);
+            setLastUpdated(cached.timestamp);
+            setLoading(false);
+            return;
+          }
         }
-      }
 
-      const data = await fetchRates("USD"); // 🔥 фиксированная база
-      const normalized = normalizeRates(data);
+        const data = await fetchRates(baseCurrency);
+        const normalized = normalizeRates(data);
 
-      if (Object.keys(normalized).length) {
-        setPrevRates(rates);
-        setRates(normalized);
+        if (!Object.keys(normalized).length) {
+          throw new Error("Empty rates");
+        }
+
+        setRates((currentRates) => {
+          setPrevRates(currentRates);
+          return normalized;
+        });
 
         const timestamp = Date.now();
         setLastUpdated(timestamp);
 
         localStorage.setItem(
-          STORAGE_KEY,
-          JSON.stringify({
-            rates: normalized,
-            timestamp,
-          })
+          cacheKey,
+          JSON.stringify({ rates: normalized, timestamp })
         );
-      } else {
-        throw new Error("Empty rates");
+      } catch {
+        const cached = readJson(cacheKey);
+
+        if (cached?.rates) {
+          const normalized = normalizeRates(cached.rates);
+          setRates((currentRates) => {
+            setPrevRates(currentRates);
+            return normalized;
+          });
+          setLastUpdated(cached.timestamp || null);
+        }
+      } finally {
+        setLoading(false);
       }
-    } catch (e) {
-      console.error("Currency error:", e);
+    },
+    [baseCurrency]
+  );
 
-      const cached = localStorage.getItem(STORAGE_KEY);
-      if (cached) {
-        const parsed = JSON.parse(cached);
-        const normalized = normalizeRates(parsed.rates);
-
-        setPrevRates(rates);
-        setRates(normalized);
-        setLastUpdated(parsed.timestamp || null);
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  /* ===================== INIT (🔥 FIX) ===================== */
   useEffect(() => {
-    loadRates();
-  }, []);
+    loadRates(false);
+  }, [loadRates]);
 
-  /* ===================== WATCHLIST ===================== */
-  useEffect(() => {
-    const saved = localStorage.getItem(WATCHLIST_KEY);
+  const refreshRates = useCallback(() => loadRates(true), [loadRates]);
 
-    if (saved) {
-      try {
-        setWatchlist(JSON.parse(saved));
-      } catch (e) {
-        console.error("Watchlist error:", e);
-      }
+  const setBaseCurrency = useCallback((nextCurrency) => {
+    const normalized = normalizeCurrencyCode(nextCurrency, "");
+
+    if (normalized) {
+      setBaseCurrencyState(normalized);
     }
   }, []);
 
-  useEffect(() => {
-    localStorage.setItem(
-      WATCHLIST_KEY,
-      JSON.stringify(watchlist)
-    );
-  }, [watchlist]);
+  const addCurrency = useCallback((code) => {
+    const normalized = normalizeCurrencyCode(code, "");
 
-  /* ===================== ACTIONS ===================== */
-  const refreshRates = () => loadRates(true);
+    if (!normalized) return;
 
-  const addCurrency = (code) => {
     setWatchlist((prev) =>
-      prev.includes(code) ? prev : [...prev, code]
+      prev.includes(normalized) ? prev : [...prev, normalized]
     );
-  };
+  }, []);
 
-  const removeCurrency = (code) => {
-    setWatchlist((prev) =>
-      prev.filter((c) => c !== code)
-    );
-  };
+  const removeCurrency = useCallback((code) => {
+    const normalized = normalizeCurrencyCode(code, "");
 
-  /* ===================== CONVERT (🔥 FIXED) ===================== */
+    setWatchlist((prev) => prev.filter((item) => item !== normalized));
+  }, []);
+
   const convert = useCallback(
     (amount, from, to) => {
-      if (!amount) return 0;
-      if (from === to) return amount;
+      const value = Number(amount);
+      if (!Number.isFinite(value)) return 0;
 
-      if (!rates[from] || !rates[to]) return amount;
+      const source = normalizeCurrencyCode(from, baseCurrency);
+      const target = normalizeCurrencyCode(to, baseCurrency);
 
-      const base =
-        from === internalBaseCurrency
-          ? amount
-          : amount / rates[from];
+      if (source === target) return value;
+      if (!rates[source] || !rates[target]) return value;
 
-      return to === internalBaseCurrency
-        ? base
-        : base * rates[to];
+      const baseAmount =
+        source === baseCurrency ? value : value / rates[source];
+
+      return target === baseCurrency
+        ? baseAmount
+        : baseAmount * rates[target];
     },
-    [rates, internalBaseCurrency]
+    [rates, baseCurrency]
   );
 
-  return (
-    <CurrencyContext.Provider
-      value={{
-        rates,
-        prevRates,
-        convert,
-        loading,
-
-        baseCurrency: internalBaseCurrency,
-        setBaseCurrency: setInternalBaseCurrency,
-
-        lastUpdated,
-        refreshRates,
-
-        watchlist,
-        addCurrency,
-        removeCurrency,
-      }}
-    >
-      {children}
-    </CurrencyContext.Provider>
+  const value = useMemo(
+    () => ({
+      rates,
+      prevRates,
+      convert,
+      loading,
+      baseCurrency,
+      setBaseCurrency,
+      lastUpdated,
+      refreshRates,
+      watchlist,
+      addCurrency,
+      removeCurrency,
+    }),
+    [
+      rates,
+      prevRates,
+      convert,
+      loading,
+      baseCurrency,
+      setBaseCurrency,
+      lastUpdated,
+      refreshRates,
+      watchlist,
+      addCurrency,
+      removeCurrency,
+    ]
   );
-};
 
-/* ===================== HOOK ===================== */
-export const useCurrency = () => {
-  const ctx = useContext(CurrencyContext);
-
-  if (!ctx) {
-    throw new Error(
-      "useCurrency must be used within CurrencyProvider"
-    );
-  }
-
-  return ctx;
+  return <CurrencyContext.Provider value={value}>{children}</CurrencyContext.Provider>;
 };

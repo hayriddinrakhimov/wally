@@ -1,6 +1,6 @@
-import { useState } from "react";
-import { useTheme } from "../theme/ThemeProvider";
-import { useCurrency } from "../context/CurrencyProvider";
+﻿import { useState } from "react";
+import { useTheme } from "../theme/useTheme";
+import { useCurrency } from "../context/useCurrency";
 import {
   Palette,
   Download,
@@ -24,7 +24,6 @@ export const SettingsContent = ({ onOpenColorPicker }) => {
 
   const [search, setSearch] = useState("");
 
-  // 🔥 расширенный список (потом заменим на API / provider)
   const ALL_CURRENCIES = [
     "USD",
     "EUR",
@@ -44,13 +43,12 @@ export const SettingsContent = ({ onOpenColorPicker }) => {
     "NOK",
   ];
 
-  const filteredCurrencies = ALL_CURRENCIES.filter((c) =>
-    c.toLowerCase().includes(search.toLowerCase())
+  const filteredCurrencies = ALL_CURRENCIES.filter((currency) =>
+    currency.toLowerCase().includes(search.toLowerCase())
   );
 
   return (
     <div style={{ paddingBottom: 32 }}>
-      {/* ===== ВНЕШНИЙ ВИД ===== */}
       <SectionTitle>Внешний вид</SectionTitle>
 
       <Block>
@@ -63,7 +61,6 @@ export const SettingsContent = ({ onOpenColorPicker }) => {
         />
       </Block>
 
-      {/* ===== ВАЛЮТА ===== */}
       <SectionTitle>Валюта</SectionTitle>
 
       <Block>
@@ -74,11 +71,10 @@ export const SettingsContent = ({ onOpenColorPicker }) => {
           right={<span style={{ fontWeight: 700 }}>{baseCurrency}</span>}
         />
 
-        {/* SEARCH */}
         <div style={{ padding: 12 }}>
           <input
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(event) => setSearch(event.target.value)}
             placeholder="Поиск валюты..."
             style={{
               width: "100%",
@@ -90,15 +86,14 @@ export const SettingsContent = ({ onOpenColorPicker }) => {
           />
         </div>
 
-        {/* LIST */}
         <div style={{ maxHeight: 200, overflowY: "auto" }}>
-          {filteredCurrencies.map((cur) => {
-            const active = baseCurrency === cur;
+          {filteredCurrencies.map((currency) => {
+            const active = baseCurrency === currency;
 
             return (
               <div
-                key={cur}
-                onClick={() => setBaseCurrency(cur)}
+                key={currency}
+                onClick={() => setBaseCurrency(currency)}
                 style={{
                   display: "flex",
                   justifyContent: "space-between",
@@ -107,7 +102,7 @@ export const SettingsContent = ({ onOpenColorPicker }) => {
                   alignItems: "center",
                 }}
               >
-                <span style={{ fontWeight: 600 }}>{cur}</span>
+                <span style={{ fontWeight: 600 }}>{currency}</span>
 
                 {active && <Check size={16} color={primary} />}
               </div>
@@ -116,13 +111,12 @@ export const SettingsContent = ({ onOpenColorPicker }) => {
         </div>
       </Block>
 
-      {/* ===== WATCHLIST ===== */}
       <SectionTitle>Отслеживаемые валюты</SectionTitle>
 
       <Block>
-        {watchlist.map((cur) => (
+        {watchlist.map((currency) => (
           <div
-            key={cur}
+            key={currency}
             style={{
               display: "flex",
               justifyContent: "space-between",
@@ -130,10 +124,10 @@ export const SettingsContent = ({ onOpenColorPicker }) => {
               alignItems: "center",
             }}
           >
-            <span>{cur}</span>
+            <span>{currency}</span>
 
             <button
-              onClick={() => removeCurrency(cur)}
+              onClick={() => removeCurrency(currency)}
               style={{
                 border: "none",
                 background: "transparent",
@@ -150,7 +144,7 @@ export const SettingsContent = ({ onOpenColorPicker }) => {
         <div style={{ padding: 12 }}>
           <button
             onClick={() => {
-              const input = prompt("Введите валюту (USD, EUR...)");
+              const input = prompt("Введите валюту (USD, EUR...) ");
               if (input) addCurrency(input.toUpperCase());
             }}
             style={{
@@ -168,7 +162,6 @@ export const SettingsContent = ({ onOpenColorPicker }) => {
         </div>
       </Block>
 
-      {/* ===== остальное НЕ трогали ===== */}
       <SectionTitle>Данные и импорт</SectionTitle>
 
       <Block>
@@ -180,20 +173,15 @@ export const SettingsContent = ({ onOpenColorPicker }) => {
       <SectionTitle>Опасные действия</SectionTitle>
 
       <Block>
-        <Row
-          icon={<Trash2 size={18} />}
-          title="Удалить все данные"
-          danger
-        />
+        <Row icon={<Trash2 size={18} />} title="Удалить все данные" danger />
       </Block>
     </div>
   );
 };
 
-/* ===== UI HELPERS (без изменений) ===== */
-
 const SectionTitle = ({ children }) => {
   const theme = useTheme();
+
   return (
     <div
       style={{
@@ -211,6 +199,7 @@ const SectionTitle = ({ children }) => {
 
 const Block = ({ children }) => {
   const theme = useTheme();
+
   return (
     <div
       style={{
@@ -242,13 +231,16 @@ const Row = ({ icon, title, subtitle, right, onClick, danger }) => {
       <div style={{ display: "flex", gap: 12 }}>
         {icon}
         <div>
-          <div style={{ fontWeight: 600, color: danger ? theme.colors.danger : "" }}>
+          <div
+            style={{
+              fontWeight: 600,
+              color: danger ? theme.colors.danger : "",
+            }}
+          >
             {title}
           </div>
           {subtitle && (
-            <div style={{ fontSize: 12, opacity: 0.6 }}>
-              {subtitle}
-            </div>
+            <div style={{ fontSize: 12, opacity: 0.6 }}>{subtitle}</div>
           )}
         </div>
       </div>
@@ -260,9 +252,7 @@ const Row = ({ icon, title, subtitle, right, onClick, danger }) => {
 
 const Divider = () => {
   const theme = useTheme();
-  return (
-    <div style={{ height: 1, background: theme.colors.border }} />
-  );
+  return <div style={{ height: 1, background: theme.colors.border }} />;
 };
 
 const ColorDot = ({ color }) => (

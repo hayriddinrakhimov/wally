@@ -1,32 +1,32 @@
-import { useMemo } from "react";
-import { useCurrency } from "../context/CurrencyProvider";
+﻿import { useMemo } from "react";
+import { useCurrency } from "../context/useCurrency";
 import { formatMoney } from "../utils/formatMoney";
 
 export const TotalBalance = ({ accounts }) => {
   const { convert, baseCurrency } = useCurrency();
 
-  const getColor = (acc) => {
+  const getColor = (account) => {
     const map = {
       cash: "#10b981",
       card: "#3b82f6",
       deposit: "#8b5cf6",
     };
 
-    return acc.color || map[acc.type] || "var(--primary)";
+    return account.color || map[account.type] || "var(--primary)";
   };
 
   const enriched = useMemo(() => {
-    return accounts.map((acc) => {
+    return accounts.map((account) => {
       const baseAmount = convert(
-        acc.balance,
-        acc.currency,
+        account.balance,
+        account.currency,
         baseCurrency
       );
 
       return {
-        ...acc,
+        ...account,
         baseAmount,
-        uiColor: getColor(acc),
+        uiColor: getColor(account),
       };
     });
   }, [accounts, baseCurrency, convert]);
@@ -43,32 +43,32 @@ export const TotalBalance = ({ accounts }) => {
     );
   }, [enriched]);
 
-  const total = useMemo(() => {
-    return sorted.reduce((sum, acc) => sum + acc.baseAmount, 0);
-  }, [sorted]);
+  const total = useMemo(
+    () => sorted.reduce((sum, account) => sum + account.baseAmount, 0),
+    [sorted]
+  );
 
   return (
     <div
       style={{
         margin: "0 16px",
-        padding: 20,
-        borderRadius: 24,
+        padding: 14,
+        borderRadius: 18,
         background: "var(--bg)",
         border: "1px solid var(--border)",
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
-        gap: 14,
+        gap: 10,
       }}
     >
-      {/* 🔥 STICKY HEADER */}
       <div
         style={{
           position: "sticky",
           top: 0,
           zIndex: 10,
           background: "var(--bg)",
-          padding: "6px 0",
+          padding: "2px 0",
           fontSize: 12,
           color: "var(--text-secondary)",
           backdropFilter: "blur(8px)",
@@ -77,10 +77,9 @@ export const TotalBalance = ({ accounts }) => {
         ОБЩИЙ БАЛАНС
       </div>
 
-      {/* TOTAL */}
       <div
         style={{
-          fontSize: 38,
+          fontSize: 34,
           fontWeight: 700,
           color: "var(--primary)",
         }}
@@ -88,46 +87,44 @@ export const TotalBalance = ({ accounts }) => {
         {formatMoney(total, baseCurrency)}
       </div>
 
-      {/* ACCOUNTS */}
       <div
         style={{
           width: "100%",
           display: "flex",
           flexDirection: "column",
-          gap: 10,
+          gap: 6,
         }}
       >
-        {sorted.map((acc) => (
+        {sorted.map((account) => (
           <div
-            key={acc.id}
+            key={account.id}
             style={{
               display: "flex",
               justifyContent: "space-between",
             }}
           >
-            <span style={{ color: "var(--text)" }}>
-              {acc.name}
-            </span>
+            <span style={{ color: "var(--text)" }}>{account.name}</span>
 
             <div style={{ textAlign: "right" }}>
               <div style={{ color: "var(--text)" }}>
-                {formatMoney(acc.balance, acc.currency)}
+                {formatMoney(account.balance, account.currency)}
               </div>
 
-              <div
-                style={{
-                  fontSize: 12,
-                  color: "var(--text-secondary)",
-                }}
-              >
-                ≈ {formatMoney(acc.baseAmount, baseCurrency)}
-              </div>
+              {account.currency !== baseCurrency && (
+                <div
+                  style={{
+                    fontSize: 11,
+                    color: "var(--text-secondary)",
+                  }}
+                >
+                  ≈ {formatMoney(account.baseAmount, baseCurrency)}
+                </div>
+              )}
             </div>
           </div>
         ))}
       </div>
 
-      {/* PROGRESS */}
       <div
         style={{
           width: "100%",
@@ -137,17 +134,15 @@ export const TotalBalance = ({ accounts }) => {
           overflow: "hidden",
         }}
       >
-        {sorted.map((acc) => {
-          const percent = total
-            ? (acc.baseAmount / total) * 100
-            : 0;
+        {sorted.map((account) => {
+          const percent = total ? (account.baseAmount / total) * 100 : 0;
 
           return (
             <div
-              key={acc.id}
+              key={account.id}
               style={{
                 width: `${percent}%`,
-                background: acc.uiColor,
+                background: account.uiColor,
               }}
             />
           );

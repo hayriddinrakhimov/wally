@@ -1,3 +1,4 @@
+﻿// eslint-disable-next-line no-unused-vars
 import { motion } from "framer-motion";
 import { AccountCard } from "./AccountCard";
 import { AddAccountCard } from "./AddAccountCard";
@@ -13,6 +14,7 @@ export const AccountsStack = ({
   const isDragging = useRef(false);
 
   const count = accounts.length;
+  const safeIndex = count > 0 ? ((index % count) + count) % count : 0;
 
   const handleDragStart = () => {
     isDragging.current = true;
@@ -22,23 +24,23 @@ export const AccountsStack = ({
     const offset = info.offset.x;
     const velocity = info.velocity.x;
 
-    let newIndex = index;
+    let newIndex = safeIndex;
 
     if (offset < -60 || velocity < -500) {
-      newIndex = index + 1;
+      newIndex = safeIndex + 1;
     } else if (offset > 60 || velocity > 500) {
-      newIndex = index - 1;
+      newIndex = safeIndex - 1;
     }
 
     if (newIndex < 0) newIndex = count - 1;
     if (newIndex >= count) newIndex = 0;
 
-    setIndex(newIndex);
+    setIndex?.(newIndex);
     isDragging.current = false;
   };
 
   const getOffset = (i) => {
-    let diff = i - index;
+    let diff = i - safeIndex;
 
     if (diff > count / 2) diff -= count;
     if (diff < -count / 2) diff += count;
@@ -50,6 +52,8 @@ export const AccountsStack = ({
     <div
       style={{
         position: "relative",
+        width: "100%",
+        maxWidth: 360,
         height: 220,
         display: "flex",
         alignItems: "center",
@@ -57,6 +61,12 @@ export const AccountsStack = ({
         overflow: "hidden",
       }}
     >
+      {count === 0 && (
+        <div style={{ width: "100%", padding: "0 16px" }}>
+          <AddAccountCard onClick={onAdd} />
+        </div>
+      )}
+
       {/* ================= ACCOUNTS ================= */}
       {accounts.map((acc, i) => {
         const offset = getOffset(i);
@@ -102,19 +112,22 @@ export const AccountsStack = ({
       })}
 
       {/* ================= ADD BUTTON (OVERLAY) ================= */}
-      <div
-        style={{
-          position: "absolute",
-          right: 10,
-          top: 10,
-        }}
-      >
-        <AddAccountCard
-          onClick={() => {
-            if (!isDragging.current) onAdd();
+      {count > 0 && (
+        <div
+          style={{
+            position: "absolute",
+            right: 10,
+            top: 10,
+            zIndex: 4,
           }}
-        />
-      </div>
+        >
+          <AddAccountCard
+            onClick={() => {
+              if (!isDragging.current) onAdd?.();
+            }}
+          />
+        </div>
+      )}
 
       {/* ================= INDICATOR ================= */}
       <div
@@ -129,8 +142,8 @@ export const AccountsStack = ({
           <motion.div
             key={i}
             animate={{
-              scale: index === i ? 1.2 : 1,
-              opacity: index === i ? 1 : 0.3,
+              scale: safeIndex === i ? 1.2 : 1,
+              opacity: safeIndex === i ? 1 : 0.3,
             }}
             transition={{ duration: 0.2 }}
             style={{

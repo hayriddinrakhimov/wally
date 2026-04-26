@@ -1,10 +1,9 @@
-import { useEffect } from "react";
-import { useTheme } from "../theme/ThemeProvider";
+﻿import { useCallback, useEffect } from "react";
+import { useTheme } from "../theme/useTheme";
 
 export const AccountFormContent = ({
   account,
   color,
-  usedColors,
   onOpenColorPicker,
   onSave,
   onChange,
@@ -15,30 +14,27 @@ export const AccountFormContent = ({
   const currency = account?.currency || "KZT";
   const type = account?.type || "card";
 
-  /* ================= SUBMIT ================= */
-
-  const handleSubmit = () => {
+  const handleSubmit = useCallback(() => {
     if (!name.trim()) return;
 
     onSave({
       ...account,
+      name: name.trim(),
       color,
     });
-  };
+  }, [name, onSave, account, color]);
 
   useEffect(() => {
     const handler = () => handleSubmit();
 
     document.addEventListener("submitAccount", handler);
-    return () =>
+    return () => {
       document.removeEventListener("submitAccount", handler);
-  }, [account, color]);
-
-  /* ================= UI ================= */
+    };
+  }, [handleSubmit]);
 
   return (
     <div>
-      {/* ===== ПРЕВЬЮ + ТИП ===== */}
       <div style={{ padding: 16 }}>
         <PreviewCard
           name={name || "Название счета"}
@@ -47,7 +43,6 @@ export const AccountFormContent = ({
           type={type}
         />
 
-        {/* 🔥 тип рядом с картой */}
         <div
           style={{
             display: "flex",
@@ -56,18 +51,16 @@ export const AccountFormContent = ({
           }}
         >
           {[
-            { id: "cash", label: "💵" },
-            { id: "card", label: "💳" },
-            { id: "deposit", label: "🏦" },
-          ].map((t) => {
-            const active = type === t.id;
+            { id: "cash", label: "??" },
+            { id: "card", label: "??" },
+            { id: "deposit", label: "??" },
+          ].map((accountType) => {
+            const active = type === accountType.id;
 
             return (
               <div
-                key={t.id}
-                onClick={() =>
-                  onChange({ ...account, type: t.id })
-                }
+                key={accountType.id}
+                onClick={() => onChange({ ...account, type: accountType.id })}
                 style={{
                   flex: 1,
                   height: 48,
@@ -76,38 +69,29 @@ export const AccountFormContent = ({
                   alignItems: "center",
                   justifyContent: "center",
                   fontSize: 20,
-
-                  background: active
-                    ? "var(--primary)"
-                    : "transparent",
-
+                  background: active ? "var(--primary)" : "transparent",
                   color: active ? "white" : "#888",
-
-                  border: active
-                    ? "none"
-                    : `1px solid ${theme.colors.border}`,
-
+                  border: active ? "none" : `1px solid ${theme.colors.border}`,
                   cursor: "pointer",
                 }}
               >
-                {t.label}
+                {accountType.label}
               </div>
             );
           })}
         </div>
       </div>
 
-      {/* ===== НАЗВАНИЕ ===== */}
       <SectionTitle>Счет</SectionTitle>
 
       <Block>
         <div style={{ padding: 16 }}>
           <input
             value={name}
-            onChange={(e) =>
+            onChange={(event) =>
               onChange({
                 ...account,
-                name: e.target.value,
+                name: event.target.value,
               })
             }
             placeholder="Название счета"
@@ -123,7 +107,6 @@ export const AccountFormContent = ({
         </div>
       </Block>
 
-      {/* ===== ВАЛЮТА ===== */}
       <SectionTitle>Валюта</SectionTitle>
 
       <Block>
@@ -132,10 +115,10 @@ export const AccountFormContent = ({
           right={
             <select
               value={currency}
-              onChange={(e) =>
+              onChange={(event) =>
                 onChange({
                   ...account,
-                  currency: e.target.value,
+                  currency: event.target.value,
                 })
               }
               style={{
@@ -153,7 +136,6 @@ export const AccountFormContent = ({
         />
       </Block>
 
-      {/* ===== ЦВЕТ ===== */}
       <SectionTitle>Цвет</SectionTitle>
 
       <Block>
@@ -166,8 +148,6 @@ export const AccountFormContent = ({
     </div>
   );
 };
-
-/* ================= ПРЕВЬЮ ================= */
 
 const gradients = {
   blue: "linear-gradient(135deg, #3b82f6, #1e293b)",
@@ -189,7 +169,7 @@ const PreviewCard = ({ name, currency, color, type }) => {
     <div
       style={{
         width: "100%",
-        aspectRatio: "1.6 / 1", // 🔥 фикс пропорции
+        aspectRatio: "1.6 / 1",
         borderRadius: 20,
         padding: 18,
         background: bg,
@@ -216,13 +196,15 @@ const PreviewCard = ({ name, currency, color, type }) => {
       </div>
 
       <div style={{ fontSize: 12, opacity: 0.7 }}>
-        {type === "card" ? "**** 1234" : type === "deposit" ? "Ставка 10%" : "Наличные"}
+        {type === "card"
+          ? "**** 1234"
+          : type === "deposit"
+            ? "Ставка 10%"
+            : "Наличные"}
       </div>
     </div>
   );
 };
-
-/* ================= UI ================= */
 
 const SectionTitle = ({ children }) => {
   const theme = useTheme();
@@ -269,9 +251,7 @@ const Row = ({ title, right, onClick }) => {
         cursor: onClick ? "pointer" : "default",
       }}
     >
-      <div style={{ color: theme.colors.text, fontWeight: 500 }}>
-        {title}
-      </div>
+      <div style={{ color: theme.colors.text, fontWeight: 500 }}>{title}</div>
       {right}
     </div>
   );
@@ -288,16 +268,14 @@ const ColorDot = ({ color }) => (
   />
 );
 
-/* ================= HELPERS ================= */
-
 function getCurrencySymbol(currency) {
   switch (currency) {
     case "USD":
       return "$";
     case "RUB":
-      return "₽";
+      return "?";
     default:
-      return "₸";
+      return "?";
   }
 }
 

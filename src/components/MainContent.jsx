@@ -1,4 +1,4 @@
-import { AccountsStack } from "./AccountsStack";
+﻿import { AccountsStack } from "./AccountsStack";
 import { CurrencyWidget } from "./CurrencyWidget";
 import { TransactionsList } from "./TransactionsList";
 
@@ -9,6 +9,7 @@ export const MainContent = ({
   onAdd,
   onEdit,
   onOpenCurrency,
+  onTransactionPress,
   transactions = [],
 }) => {
   return (
@@ -17,12 +18,9 @@ export const MainContent = ({
         flex: 1,
         display: "flex",
         flexDirection: "column",
-
-        // ❗ важно для flex scroll
         minHeight: 0,
       }}
     >
-      {/* ================= ACCOUNTS ================= */}
       <div
         style={{
           flexShrink: 0,
@@ -39,7 +37,6 @@ export const MainContent = ({
         />
       </div>
 
-      {/* ================= CURRENCY ================= */}
       <div
         style={{
           flexShrink: 0,
@@ -50,12 +47,9 @@ export const MainContent = ({
         <CurrencyWidget onOpen={onOpenCurrency} />
       </div>
 
-      {/* ================= TRANSACTIONS (SCROLL AREA) ================= */}
       <div
         style={{
           flex: 1,
-
-          // ❗ ключевой фикс
           minHeight: 0,
           overflow: "hidden",
         }}
@@ -70,6 +64,7 @@ export const MainContent = ({
           <TransactionsList
             transactions={transactions}
             accounts={accounts}
+            onPress={onTransactionPress}
           />
         </div>
       </div>

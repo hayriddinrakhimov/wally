@@ -1,5 +1,5 @@
-import { Wallet, BarChart3, Plus, Repeat, PiggyBank } from "lucide-react";
-import { useTheme } from "../theme/ThemeProvider";
+﻿import { Wallet, BarChart3, Plus, Repeat, PiggyBank } from "lucide-react";
+import { useTheme } from "../theme/useTheme";
 
 export const Navbar = ({ activeTab, setActiveTab, onOpenSheet }) => {
   const theme = useTheme() || {};
@@ -52,7 +52,7 @@ export const Navbar = ({ activeTab, setActiveTab, onOpenSheet }) => {
         );
       })}
 
-      {/* КНОПКА + */}
+      {/* РљРќРћРџРљРђ + */}
       <div
         onClick={() => onOpenSheet("add")}
         style={{

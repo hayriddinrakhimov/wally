@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useCurrency } from "../context/CurrencyProvider";
+﻿import { useState } from "react";
+import { useCurrency } from "../context/useCurrency";
 
 const ALL_CURRENCIES = [
   "USD",
@@ -24,11 +24,11 @@ export const ExchangeRatesContent = () => {
 
   const [search, setSearch] = useState("");
 
-  const filtered = ALL_CURRENCIES.filter((c) =>
-    c.toLowerCase().includes(search.toLowerCase())
+  const filtered = ALL_CURRENCIES.filter((currency) =>
+    currency.toLowerCase().includes(search.toLowerCase())
   );
 
-  const isInWatchlist = (cur) => watchlist?.includes(cur);
+  const isInWatchlist = (currency) => watchlist?.includes(currency);
 
   const formatRate = (currency) => {
     if (!rates[currency]) return "—";
@@ -39,10 +39,9 @@ export const ExchangeRatesContent = () => {
 
   return (
     <div>
-      {/* SEARCH */}
       <input
         value={search}
-        onChange={(e) => setSearch(e.target.value)}
+        onChange={(event) => setSearch(event.target.value)}
         placeholder="Поиск валюты..."
         style={{
           width: "100%",
@@ -54,14 +53,8 @@ export const ExchangeRatesContent = () => {
         }}
       />
 
-      {/* LOADING */}
-      {loading && (
-        <div style={{ fontSize: 13, opacity: 0.6 }}>
-          Загрузка курсов...
-        </div>
-      )}
+      {loading && <div style={{ fontSize: 13, opacity: 0.6 }}>Загрузка курсов...</div>}
 
-      {/* LIST */}
       {!loading &&
         filtered.map((currency) => {
           const added = isInWatchlist(currency);
@@ -77,7 +70,6 @@ export const ExchangeRatesContent = () => {
                 borderBottom: "1px solid #f3f3f3",
               }}
             >
-              {/* LEFT */}
               <div>
                 <div style={{ fontWeight: 600 }}>{currency}</div>
                 <div style={{ fontSize: 12, opacity: 0.6 }}>
@@ -85,7 +77,6 @@ export const ExchangeRatesContent = () => {
                 </div>
               </div>
 
-              {/* BUTTON */}
               {!added ? (
                 <button
                   onClick={() => addCurrency(currency)}

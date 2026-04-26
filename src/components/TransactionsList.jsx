@@ -1,4 +1,4 @@
-import { getCategory } from "../utils/getCategory";
+﻿import { getCategory } from "../utils/getCategory";
 import { getTransactionColor } from "../utils/getTransactionColor";
 import { formatMoney } from "../utils/formatMoney";
 
@@ -23,7 +23,7 @@ export const TransactionsList = ({
   }
 
   const getAccountName = (id) =>
-    accounts.find((a) => a.id === id)?.name || "—";
+    accounts.find((account) => account.id === id)?.name || "—";
 
   const getTypeLabel = (type) => {
     switch (type) {
@@ -40,11 +40,16 @@ export const TransactionsList = ({
 
   return (
     <div style={{ padding: "0 12px", marginTop: 12 }}>
-      {transactions.map((tx) => {
-        const category = getCategory(tx.categoryId);
-        const isTransfer = tx.type === "transfer";
+      {transactions.map((transaction) => {
+        const from = transaction.from || transaction.fromAccountId;
+        const to = transaction.to || transaction.toAccountId;
+        const categoryId =
+          transaction.categoryId || transaction.category || null;
 
-        const typeLabel = getTypeLabel(tx.type);
+        const category = getCategory(categoryId);
+        const isTransfer = transaction.type === "transfer";
+
+        const typeLabel = getTypeLabel(transaction.type);
 
         const title = isTransfer
           ? "Перевод"
@@ -52,8 +57,8 @@ export const TransactionsList = ({
 
         return (
           <div
-            key={tx.id}
-            onClick={() => onPress?.(tx)}
+            key={transaction.id}
+            onClick={() => onPress?.(transaction)}
             style={{
               display: "flex",
               justifyContent: "space-between",
@@ -66,9 +71,7 @@ export const TransactionsList = ({
               cursor: "pointer",
             }}
           >
-            {/* LEFT */}
             <div style={{ display: "flex", flexDirection: "column" }}>
-              {/* TITLE */}
               <div
                 style={{
                   fontWeight: 600,
@@ -78,7 +81,6 @@ export const TransactionsList = ({
                 {title}
               </div>
 
-              {/* ACCOUNTS */}
               <div
                 style={{
                   fontSize: 12,
@@ -87,14 +89,11 @@ export const TransactionsList = ({
                 }}
               >
                 {isTransfer
-                  ? `${getAccountName(tx.from)} → ${getAccountName(
-                      tx.to
-                    )}`
-                  : getAccountName(tx.from || tx.to)}
+                  ? `${getAccountName(from)} > ${getAccountName(to)}`
+                  : getAccountName(from || to)}
               </div>
 
-              {/* NOTE */}
-              {tx.note && (
+              {transaction.note && (
                 <div
                   style={{
                     fontSize: 12,
@@ -102,23 +101,22 @@ export const TransactionsList = ({
                     color: "var(--text-secondary)",
                   }}
                 >
-                  {tx.note}
+                  {transaction.note}
                 </div>
               )}
             </div>
 
-            {/* RIGHT */}
             <div style={{ textAlign: "right" }}>
               <div
                 style={{
                   fontWeight: 700,
-                  color: getTransactionColor(tx.type),
+                  color: getTransactionColor(transaction.type),
                 }}
               >
-                {tx.type === "income" && "+"}
-                {tx.type === "expense" && "-"}
-                {tx.type === "transfer" && "↔"}{" "}
-                {formatMoney(tx.amount, tx.currency || "KZT")}
+                {transaction.type === "income" && "+"}
+                {transaction.type === "expense" && "-"}
+                {transaction.type === "transfer" && "-"}{" "}
+                {formatMoney(transaction.amount, transaction.currency || "KZT")}
               </div>
 
               <div
@@ -128,7 +126,7 @@ export const TransactionsList = ({
                   color: "var(--text-secondary)",
                 }}
               >
-                {new Date(tx.date).toLocaleDateString()}
+                {new Date(transaction.date).toLocaleDateString()}
               </div>
             </div>
           </div>
