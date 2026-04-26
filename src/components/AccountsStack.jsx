@@ -1,19 +1,14 @@
-﻿import { motion } from "framer-motion";
+// eslint-disable-next-line no-unused-vars
+import { motion } from "framer-motion";
 import { AccountCard } from "./AccountCard";
 import { useRef } from "react";
 
-export const AccountsStack = ({
-  accounts,
-  index = 0,
-  setIndex,
-  onEdit,
-}) => {
+export const AccountsStack = ({ accounts, index = 0, setIndex, onEdit }) => {
   const isDragging = useRef(false);
 
   const count = accounts?.length || 0;
 
-  const safeIndex =
-    count > 0 ? ((index % count) + count) % count : 0;
+  const safeIndex = count > 0 ? ((index % count) + count) % count : 0;
 
   const handleDragStart = () => {
     isDragging.current = true;
@@ -103,7 +98,6 @@ export const AccountsStack = ({
         );
       })}
 
-      {/* INDICATOR */}
       <div
         style={{
           position: "absolute",

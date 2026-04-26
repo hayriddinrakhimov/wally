@@ -3,9 +3,12 @@ import { TransactionForm } from "./TransactionForm";
 
 export const TransactionContent = ({
   accounts,
-  onSubmit, // ✅ теперь принимаем
+  subscriptions = [],
+  goals = [],
+  initialDraft = null,
+  onSubmit,
 }) => {
-  const [type, setType] = useState("expense");
+  const [type, setType] = useState(initialDraft?.type || "expense");
 
   const tabs = [
     { key: "expense", label: "Расход" },
@@ -15,7 +18,6 @@ export const TransactionContent = ({
 
   return (
     <div>
-      {/* TABS */}
       <div
         style={{
           display: "flex",
@@ -31,12 +33,13 @@ export const TransactionContent = ({
             onClick={() => setType(tab.key)}
             style={{
               flex: 1,
-              padding: 10,
+              height: 38,
               borderRadius: 10,
               border: "none",
-              background:
-                type === tab.key ? "var(--bg)" : "transparent",
+              background: type === tab.key ? "var(--bg)" : "transparent",
               cursor: "pointer",
+              fontWeight: 600,
+              fontSize: 13,
             }}
           >
             {tab.label}
@@ -44,10 +47,12 @@ export const TransactionContent = ({
         ))}
       </div>
 
-      {/* ✅ ВАЖНО: прокидываем onSubmit */}
       <TransactionForm
         type={type}
         accounts={accounts}
+        subscriptions={subscriptions}
+        goals={goals}
+        initialDraft={initialDraft}
         onSubmit={onSubmit}
       />
     </div>

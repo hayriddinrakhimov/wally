@@ -1,20 +1,20 @@
-﻿import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 // eslint-disable-next-line no-unused-vars
 import { motion } from "framer-motion";
 import { useLocalStorage } from "../hooks/useLocalStorage";
-
+import { useCurrency } from "../context/useCurrency";
 import {
-  ShoppingCart,
-  Coffee,
   Car,
-  Wallet,
-  Gift,
-  Home,
-  Gamepad2,
-  Heart,
-  Sparkles,
-  Plus,
   Check,
+  Coffee,
+  Gamepad2,
+  Gift,
+  Heart,
+  Home,
+  Plus,
+  ShoppingCart,
+  Sparkles,
+  Wallet,
 } from "lucide-react";
 
 const ICON_KEYWORDS = [
@@ -44,7 +44,7 @@ const formatNumber = (value) => {
   return numeric.replace(/\B(?=(\d{3})+(?!\d))/g, " ");
 };
 
-const parseNumber = (value) => Number(value.replace(/\s/g, ""));
+const parseNumber = (value) => Number(String(value || "").replace(/\s/g, ""));
 
 const COLORS = ["#60a5fa", "#34d399", "#f59e0b", "#f472b6", "#a78bfa"];
 
@@ -56,15 +56,19 @@ const defaultCategories = {
   income: [{ key: "salary", label: "Зарплата", color: "#22c55e" }],
 };
 
-export const TransactionForm = ({ type, accounts, onSubmit }) => {
-  const [amount, setAmount] = useState("");
-  const [categoryId, setCategoryId] = useState(null);
-  const [note, setNote] = useState("");
-
-  const [from, setFrom] = useState("");
-  const [to, setTo] = useState("");
-
-  const [categories, setCategories] = useLocalStorage("categories_v3", defaultCategories);
+export const TransactionForm = ({
+  type,
+  accounts,
+  subscriptions = [],
+  goals = [],
+  initialDraft = null,
+  onSubmit,
+}) => {
+  const { watchlist, baseCurrency } = useCurrency();
+  const [categories, setCategories] = useLocalStorage(
+    "categories_v3",
+    defaultCategories
+  );
 
   const [adding, setAdding] = useState(false);
   const [newCategory, setNewCategory] = useState("");
@@ -76,23 +80,53 @@ export const TransactionForm = ({ type, accounts, onSubmit }) => {
 
   const defaultFrom = accounts[0]?.id || "";
   const defaultTo = accounts[1]?.id || accounts[0]?.id || "";
+  const draft = initialDraft || {};
+
+  const [amount, setAmount] = useState(() =>
+    draft.amount && Number.isFinite(Number(draft.amount))
+      ? formatNumber(String(draft.amount))
+      : ""
+  );
+  const [categoryId, setCategoryId] = useState(() =>
+    type === "transfer" ? "transfer" : draft.categoryId || null
+  );
+  const [note, setNote] = useState(() => String(draft.note || ""));
+  const [from, setFrom] = useState(
+    () => draft.from || draft.fromAccountId || defaultFrom
+  );
+  const [to, setTo] = useState(() => draft.to || draft.toAccountId || defaultTo);
+  const [subscriptionId, setSubscriptionId] = useState(
+    () => draft.subscriptionId || ""
+  );
+  const [goalId, setGoalId] = useState(() => draft.goalId || "");
+  const [currency, setCurrency] = useState(() => {
+    const draftCurrency = String(draft.currency || "").toUpperCase();
+    if (draftCurrency) return draftCurrency;
+
+    const accountCurrency =
+      accounts.find(
+        (account) =>
+          account.id === (draft.from || draft.fromAccountId || draft.to || draft.toAccountId)
+      )?.currency || baseCurrency;
+
+    return accountCurrency || "KZT";
+  });
 
   const fromValue = accounts.some((account) => account.id === from)
     ? from
     : defaultFrom;
+  const toValue = accounts.some((account) => account.id === to) ? to : defaultTo;
 
-  const toValue = accounts.some((account) => account.id === to)
-    ? to
-    : defaultTo;
+  const currencyOptions = useMemo(() => {
+    const set = new Set([baseCurrency, ...(watchlist || []), currency, "KZT"]);
+    return Array.from(set).filter(Boolean);
+  }, [baseCurrency, watchlist, currency]);
 
   const handleSubmit = useCallback(() => {
     if (typeof onSubmit !== "function") return;
 
     const numericAmount = parseNumber(amount);
     if (!numericAmount) return;
-
-    const fromAccount = accounts.find((account) => account.id === fromValue);
-    const toAccount = accounts.find((account) => account.id === toValue);
 
     const normalizedCategoryId =
       type === "transfer"
@@ -105,43 +139,40 @@ export const TransactionForm = ({ type, accounts, onSubmit }) => {
       id: Date.now().toString(),
       type,
       amount: numericAmount,
-      currency:
-        type === "income"
-          ? toAccount?.currency || "KZT"
-          : fromAccount?.currency || "KZT",
+      currency: currency || "KZT",
       categoryId: normalizedCategoryId,
       note: note.trim(),
       date: Date.now(),
       from: type === "income" ? "" : fromValue,
       to: type === "expense" ? "" : toValue,
+      subscriptionId: subscriptionId || null,
+      goalId: goalId || null,
     };
-
-    if (type === "transfer" && fromValue === toValue) {
-      transaction.to = toValue;
-      transaction.from = fromValue;
-    }
 
     onSubmit(transaction);
 
     setAmount("");
-    setCategoryId(null);
+    setCategoryId(type === "transfer" ? "transfer" : null);
     setNote("");
+    setSubscriptionId("");
+    setGoalId("");
   }, [
     onSubmit,
     amount,
-    accounts,
     type,
+    currency,
     categoryId,
     currentCategories,
     note,
     fromValue,
     toValue,
+    subscriptionId,
+    goalId,
   ]);
 
   useEffect(() => {
     const handler = () => handleSubmit();
     document.addEventListener("submitTransaction", handler);
-
     return () => {
       document.removeEventListener("submitTransaction", handler);
     };
@@ -167,6 +198,11 @@ export const TransactionForm = ({ type, accounts, onSubmit }) => {
     setAdding(false);
   };
 
+  const activeSubscriptions = subscriptions.filter(
+    (item) => item?.isActive || item?.id === subscriptionId
+  );
+  const activeGoals = goals.filter((item) => item?.isActive || item?.id === goalId);
+
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
       <div
@@ -177,6 +213,7 @@ export const TransactionForm = ({ type, accounts, onSubmit }) => {
           padding: "14px 16px",
           background: "var(--card)",
           border: "1px solid var(--border)",
+          gap: 8,
         }}
       >
         <input
@@ -194,15 +231,25 @@ export const TransactionForm = ({ type, accounts, onSubmit }) => {
           }}
         />
 
-        <div
+        <select
+          value={currency}
+          onChange={(event) => setCurrency(event.target.value)}
           style={{
-            fontWeight: 600,
-            opacity: 0.6,
-            whiteSpace: "nowrap",
+            minWidth: 80,
+            height: 34,
+            borderRadius: 8,
+            border: "1px solid var(--border)",
+            background: "var(--bg)",
+            padding: "0 8px",
+            fontWeight: 700,
           }}
         >
-          KZT
-        </div>
+          {currencyOptions.map((code) => (
+            <option key={code} value={code}>
+              {code}
+            </option>
+          ))}
+        </select>
       </div>
 
       {type !== "transfer" && (
@@ -223,9 +270,7 @@ export const TransactionForm = ({ type, accounts, onSubmit }) => {
                   padding: "10px 14px",
                   borderRadius: 14,
                   cursor: "pointer",
-                  background: active
-                    ? category.color
-                    : `${category.color}22`,
+                  background: active ? category.color : `${category.color}22`,
                   color: active ? "#fff" : "#000",
                 }}
               >
@@ -243,7 +288,6 @@ export const TransactionForm = ({ type, accounts, onSubmit }) => {
               height: 36,
               borderRadius: 10,
               border: "1px dashed var(--border)",
-              cursor: "pointer",
               background: "transparent",
               display: "flex",
               alignItems: "center",
@@ -289,7 +333,6 @@ export const TransactionForm = ({ type, accounts, onSubmit }) => {
               border: "none",
               background: "var(--primary)",
               color: "#fff",
-              cursor: "pointer",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
@@ -304,15 +347,42 @@ export const TransactionForm = ({ type, accounts, onSubmit }) => {
         value={note}
         onChange={(event) => setNote(event.target.value)}
         placeholder="Комментарий (необязательно)"
-        style={{
-          width: "100%",
-          borderRadius: 12,
-          border: "1px solid var(--border)",
-          padding: "10px 12px",
-          background: "var(--card)",
-          outline: "none",
-        }}
+        style={inputStyle}
       />
+
+      <select
+        value={subscriptionId}
+        onChange={(event) => {
+          const nextId = event.target.value;
+          setSubscriptionId(nextId);
+
+          const selected = subscriptions.find((item) => item.id === nextId);
+          if (selected?.currency) {
+            setCurrency(selected.currency);
+          }
+        }}
+        style={inputStyle}
+      >
+        <option value="">Без подписки</option>
+        {activeSubscriptions.map((subscription) => (
+          <option key={subscription.id} value={subscription.id}>
+            {subscription.name}
+          </option>
+        ))}
+      </select>
+
+      <select
+        value={goalId}
+        onChange={(event) => setGoalId(event.target.value)}
+        style={inputStyle}
+      >
+        <option value="">Без цели</option>
+        {activeGoals.map((goal) => (
+          <option key={goal.id} value={goal.id}>
+            {goal.title}
+          </option>
+        ))}
+      </select>
 
       {type === "expense" && (
         <AccountCard
@@ -391,4 +461,13 @@ const AccountCard = ({ label, value, setValue, accounts }) => {
       <div style={{ opacity: 0.6 }}>{account?.balance || 0} KZT</div>
     </motion.div>
   );
+};
+
+const inputStyle = {
+  width: "100%",
+  borderRadius: 12,
+  border: "1px solid var(--border)",
+  padding: "10px 12px",
+  background: "var(--card)",
+  outline: "none",
 };

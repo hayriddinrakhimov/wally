@@ -1,4 +1,26 @@
-﻿const BASE_URL = "https://open.er-api.com/v6/latest";
+const BASE_URL = "https://open.er-api.com/v6/latest";
+
+const USD_FALLBACK = {
+  USD: 1,
+  EUR: 0.9,
+  RUB: 95,
+  KZT: 470,
+  UZS: 12800,
+  KGS: 89,
+};
+
+const buildFallbackRates = (base = "USD") => {
+  const normalizedBase = String(base || "USD").toUpperCase();
+  const baseRate = USD_FALLBACK[normalizedBase] || USD_FALLBACK.USD;
+
+  const converted = {};
+  Object.entries(USD_FALLBACK).forEach(([code, rate]) => {
+    converted[code] = rate / baseRate;
+  });
+
+  converted[normalizedBase] = 1;
+  return converted;
+};
 
 export const fetchRates = async (base = "USD") => {
   try {
@@ -22,15 +44,9 @@ export const fetchRates = async (base = "USD") => {
   } catch (error) {
     console.error("Currency API error:", error);
 
-    // fallback чтобы приложение НЕ падало
     return {
       base,
-      rates: {
-        USD: 1,
-        EUR: 0.9,
-        RUB: 95,
-        KZT: 470,
-      },
+      rates: buildFallbackRates(base),
       time: null,
     };
   }

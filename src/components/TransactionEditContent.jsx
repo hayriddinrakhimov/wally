@@ -1,11 +1,15 @@
-﻿import { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
+import { useCurrency } from "../context/useCurrency";
 
 export const TransactionEditContent = ({
   transaction,
   accounts,
+  subscriptions = [],
+  goals = [],
   onSave,
   onDelete,
 }) => {
+  const { watchlist, baseCurrency } = useCurrency();
   const [data, setData] = useState(transaction);
 
   useEffect(() => {
@@ -14,6 +18,9 @@ export const TransactionEditContent = ({
 
   const fromOptions = accounts || [];
   const toOptions = accounts || [];
+  const currencyOptions = Array.from(
+    new Set([baseCurrency, ...(watchlist || []), data?.currency || "KZT", "KZT"])
+  ).filter(Boolean);
 
   const save = () => {
     const amount = Number(data.amount);
@@ -23,6 +30,8 @@ export const TransactionEditContent = ({
       ...data,
       amount,
       note: String(data.note || "").trim(),
+      subscriptionId: data.subscriptionId || null,
+      goalId: data.goalId || null,
     });
   };
 
@@ -35,7 +44,6 @@ export const TransactionEditContent = ({
         height: "100%",
       }}
     >
-      {/* ================= FIELDS ================= */}
       <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
         <input
           value={data.amount}
@@ -44,40 +52,69 @@ export const TransactionEditContent = ({
           }
           type="number"
           min="0"
-          style={{
-            padding: 12,
-            borderRadius: 10,
-            border: "1px solid var(--border)",
-            outline: "none",
-          }}
+          style={inputStyle}
         />
+
+        <select
+          value={data.currency || "KZT"}
+          onChange={(event) =>
+            setData({ ...data, currency: event.target.value })
+          }
+          style={inputStyle}
+        >
+          {currencyOptions.map((code) => (
+            <option key={code} value={code}>
+              {code}
+            </option>
+          ))}
+        </select>
 
         <input
           value={data.note || ""}
-          onChange={(event) =>
-            setData({ ...data, note: event.target.value })
-          }
+          onChange={(event) => setData({ ...data, note: event.target.value })}
           placeholder="Комментарий"
-          style={{
-            padding: 12,
-            borderRadius: 10,
-            border: "1px solid var(--border)",
-            outline: "none",
-          }}
+          style={inputStyle}
         />
+
+        <select
+          value={data.subscriptionId || ""}
+          onChange={(event) =>
+            setData({ ...data, subscriptionId: event.target.value || null })
+          }
+          style={inputStyle}
+        >
+          <option value="">Без подписки</option>
+          {subscriptions
+            .filter((subscription) => subscription?.isActive || subscription?.id === data.subscriptionId)
+            .map((subscription) => (
+              <option key={subscription.id} value={subscription.id}>
+                {subscription.name}
+              </option>
+            ))}
+        </select>
+
+        <select
+          value={data.goalId || ""}
+          onChange={(event) =>
+            setData({ ...data, goalId: event.target.value || null })
+          }
+          style={inputStyle}
+        >
+          <option value="">Без цели</option>
+          {goals
+            .filter((goal) => goal?.isActive || goal?.id === data.goalId)
+            .map((goal) => (
+              <option key={goal.id} value={goal.id}>
+                {goal.title}
+              </option>
+            ))}
+        </select>
 
         {(data.type === "expense" || data.type === "transfer") && (
           <select
             value={data.from || ""}
-            onChange={(event) =>
-              setData({ ...data, from: event.target.value })
-            }
-            style={{
-              padding: 12,
-              borderRadius: 10,
-              border: "1px solid var(--border)",
-              outline: "none",
-            }}
+            onChange={(event) => setData({ ...data, from: event.target.value })}
+            style={inputStyle}
           >
             {fromOptions.map((account) => (
               <option key={account.id} value={account.id}>
@@ -90,15 +127,8 @@ export const TransactionEditContent = ({
         {(data.type === "income" || data.type === "transfer") && (
           <select
             value={data.to || ""}
-            onChange={(event) =>
-              setData({ ...data, to: event.target.value })
-            }
-            style={{
-              padding: 12,
-              borderRadius: 10,
-              border: "1px solid var(--border)",
-              outline: "none",
-            }}
+            onChange={(event) => setData({ ...data, to: event.target.value })}
+            style={inputStyle}
           >
             {toOptions.map((account) => (
               <option key={account.id} value={account.id}>
@@ -109,14 +139,7 @@ export const TransactionEditContent = ({
         )}
       </div>
 
-      {/* ================= ACTIONS (BOTTOM BAR) ================= */}
-      <div
-        style={{
-          marginTop: "auto",
-          display: "flex",
-          gap: 10,
-        }}
-      >
+      <div style={{ marginTop: "auto", display: "flex", gap: 10 }}>
         <button
           onClick={() => onDelete(transaction.id)}
           style={{
@@ -126,7 +149,6 @@ export const TransactionEditContent = ({
             color: "white",
             border: "none",
             borderRadius: 12,
-            cursor: "pointer",
             fontWeight: 600,
           }}
         >
@@ -142,7 +164,6 @@ export const TransactionEditContent = ({
             border: "none",
             borderRadius: 12,
             color: "white",
-            cursor: "pointer",
             fontWeight: 600,
           }}
         >
@@ -151,4 +172,11 @@ export const TransactionEditContent = ({
       </div>
     </div>
   );
+};
+
+const inputStyle = {
+  padding: 12,
+  borderRadius: 10,
+  border: "1px solid var(--border)",
+  outline: "none",
 };

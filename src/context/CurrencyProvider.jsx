@@ -1,4 +1,4 @@
-﻿import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { CurrencyContext } from "./CurrencyContext";
 import { fetchRates } from "../services/currencyService";
 
@@ -63,12 +63,59 @@ const readJson = (key) => {
   }
 };
 
+const collectKnownCurrenciesFromStorage = () => {
+  const keys = ["accounts", "transactions", "subscriptions_v1", "depositGoals_v1"];
+  const known = new Set();
+
+  keys.forEach((key) => {
+    const payload = readJson(key);
+    if (!Array.isArray(payload)) return;
+
+    payload.forEach((item) => {
+      const code = normalizeCurrencyCode(item?.currency, "");
+      if (code) known.add(code);
+    });
+  });
+
+  return known;
+};
+
+const pickAllowedRates = (allRates, baseCurrency, watchlist) => {
+  const allowed = new Set([baseCurrency]);
+
+  (watchlist || []).forEach((code) => {
+    const normalized = normalizeCurrencyCode(code, "");
+    if (normalized) allowed.add(normalized);
+  });
+
+  collectKnownCurrenciesFromStorage().forEach((code) => {
+    allowed.add(code);
+  });
+
+  const filtered = {};
+  allowed.forEach((code) => {
+    if (code === baseCurrency) {
+      filtered[code] = 1;
+      return;
+    }
+
+    const rate = allRates[code];
+    if (typeof rate === "number" && rate > 0) {
+      filtered[code] = rate;
+    }
+  });
+
+  filtered[baseCurrency] = 1;
+  return filtered;
+};
+
 export const CurrencyProvider = ({ children }) => {
   const [baseCurrency, setBaseCurrencyState] = useState(() =>
     parseStoredCurrency(localStorage.getItem(BASE_CURRENCY_KEY))
   );
 
   const [rates, setRates] = useState({});
+  const [ratesBaseCurrency, setRatesBaseCurrency] = useState(null);
   const [prevRates, setPrevRates] = useState({});
   const [loading, setLoading] = useState(false);
   const [lastUpdated, setLastUpdated] = useState(null);
@@ -105,8 +152,18 @@ export const CurrencyProvider = ({ children }) => {
             cached?.timestamp && Date.now() - cached.timestamp < RATES_TTL_MS;
 
           if (isFresh && cached?.rates) {
-            const normalized = normalizeRates(cached.rates);
-            setRates(normalized);
+            const normalizedAll = normalizeRates(cached.rates);
+            const filtered = pickAllowedRates(
+              normalizedAll,
+              baseCurrency,
+              watchlist
+            );
+
+            setRates((current) => {
+              setPrevRates(current);
+              return filtered;
+            });
+            setRatesBaseCurrency(baseCurrency);
             setLastUpdated(cached.timestamp);
             setLoading(false);
             return;
@@ -114,40 +171,55 @@ export const CurrencyProvider = ({ children }) => {
         }
 
         const data = await fetchRates(baseCurrency);
-        const normalized = normalizeRates(data);
+        const normalizedAll = normalizeRates(data);
 
-        if (!Object.keys(normalized).length) {
+        if (!Object.keys(normalizedAll).length) {
           throw new Error("Empty rates");
         }
 
-        setRates((currentRates) => {
-          setPrevRates(currentRates);
-          return normalized;
+        const filtered = pickAllowedRates(normalizedAll, baseCurrency, watchlist);
+
+        setRates((current) => {
+          setPrevRates(current);
+          return filtered;
         });
+        setRatesBaseCurrency(baseCurrency);
 
         const timestamp = Date.now();
         setLastUpdated(timestamp);
 
         localStorage.setItem(
           cacheKey,
-          JSON.stringify({ rates: normalized, timestamp })
+          JSON.stringify({ rates: normalizedAll, timestamp })
         );
       } catch {
         const cached = readJson(cacheKey);
 
         if (cached?.rates) {
-          const normalized = normalizeRates(cached.rates);
-          setRates((currentRates) => {
-            setPrevRates(currentRates);
-            return normalized;
+          const normalizedAll = normalizeRates(cached.rates);
+          const filtered = pickAllowedRates(
+            normalizedAll,
+            baseCurrency,
+            watchlist
+          );
+
+          setRates((current) => {
+            setPrevRates(current);
+            return filtered;
           });
+          setRatesBaseCurrency(baseCurrency);
           setLastUpdated(cached.timestamp || null);
+        } else {
+          setRates({});
+          setPrevRates({});
+          setRatesBaseCurrency(null);
+          setLastUpdated(null);
         }
       } finally {
         setLoading(false);
       }
     },
-    [baseCurrency]
+    [baseCurrency, watchlist]
   );
 
   useEffect(() => {
@@ -156,17 +228,23 @@ export const CurrencyProvider = ({ children }) => {
 
   const refreshRates = useCallback(() => loadRates(true), [loadRates]);
 
-  const setBaseCurrency = useCallback((nextCurrency) => {
-    const normalized = normalizeCurrencyCode(nextCurrency, "");
+  const setBaseCurrency = useCallback(
+    (nextCurrency) => {
+      const normalized = normalizeCurrencyCode(nextCurrency, "");
+      if (!normalized || normalized === baseCurrency) return;
 
-    if (normalized) {
+      // Reset immediately to avoid using stale rates from the previous base.
+      setRates({});
+      setPrevRates({});
+      setRatesBaseCurrency(null);
+      setLastUpdated(null);
       setBaseCurrencyState(normalized);
-    }
-  }, []);
+    },
+    [baseCurrency]
+  );
 
   const addCurrency = useCallback((code) => {
     const normalized = normalizeCurrencyCode(code, "");
-
     if (!normalized) return;
 
     setWatchlist((prev) =>
@@ -189,16 +267,18 @@ export const CurrencyProvider = ({ children }) => {
       const target = normalizeCurrencyCode(to, baseCurrency);
 
       if (source === target) return value;
-      if (!rates[source] || !rates[target]) return value;
+      if (ratesBaseCurrency !== baseCurrency) return value;
 
-      const baseAmount =
-        source === baseCurrency ? value : value / rates[source];
+      const sourceRate = source === baseCurrency ? 1 : rates[source];
+      const targetRate = target === baseCurrency ? 1 : rates[target];
 
-      return target === baseCurrency
-        ? baseAmount
-        : baseAmount * rates[target];
+      if (!sourceRate || !targetRate) return value;
+
+      const baseAmount = source === baseCurrency ? value : value / sourceRate;
+
+      return target === baseCurrency ? baseAmount : baseAmount * targetRate;
     },
-    [rates, baseCurrency]
+    [rates, ratesBaseCurrency, baseCurrency]
   );
 
   const value = useMemo(
@@ -230,5 +310,7 @@ export const CurrencyProvider = ({ children }) => {
     ]
   );
 
-  return <CurrencyContext.Provider value={value}>{children}</CurrencyContext.Provider>;
+  return (
+    <CurrencyContext.Provider value={value}>{children}</CurrencyContext.Provider>
+  );
 };

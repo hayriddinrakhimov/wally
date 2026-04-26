@@ -1,4 +1,4 @@
-﻿import { Wallet, BarChart3, Plus, Repeat, PiggyBank } from "lucide-react";
+import { Wallet, BarChart3, Plus, Repeat, PiggyBank } from "lucide-react";
 import { useTheme } from "../theme/useTheme";
 
 export const Navbar = ({ activeTab, setActiveTab, onOpenSheet }) => {
@@ -9,10 +9,10 @@ export const Navbar = ({ activeTab, setActiveTab, onOpenSheet }) => {
   const sizes = theme.sizes || {};
 
   const items = [
-    { key: "wallet", icon: Wallet },
-    { key: "stats", icon: BarChart3 },
-    { key: "transfer", icon: Repeat },
-    { key: "goals", icon: PiggyBank },
+    { key: "wallet", icon: Wallet, title: "Главная" },
+    { key: "analytics", icon: BarChart3, title: "Аналитика" },
+    { key: "subscriptions", icon: Repeat, title: "Подписки" },
+    { key: "deposit", icon: PiggyBank, title: "Депозит" },
   ];
 
   return (
@@ -39,6 +39,7 @@ export const Navbar = ({ activeTab, setActiveTab, onOpenSheet }) => {
         return (
           <div
             key={item.key}
+            title={item.title}
             onClick={() => setActiveTab(item.key)}
             style={{
               cursor: "pointer",
@@ -52,7 +53,6 @@ export const Navbar = ({ activeTab, setActiveTab, onOpenSheet }) => {
         );
       })}
 
-      {/* РљРќРћРџРљРђ + */}
       <div
         onClick={() => onOpenSheet("add")}
         style={{
@@ -67,6 +67,7 @@ export const Navbar = ({ activeTab, setActiveTab, onOpenSheet }) => {
           cursor: "pointer",
           boxShadow: "0 10px 20px rgba(0,0,0,0.2)",
         }}
+        title="Добавить операцию"
       >
         <Plus size={24} color="#fff" />
       </div>
@@ -78,6 +79,7 @@ export const Navbar = ({ activeTab, setActiveTab, onOpenSheet }) => {
         return (
           <div
             key={item.key}
+            title={item.title}
             onClick={() => setActiveTab(item.key)}
             style={{
               cursor: "pointer",
